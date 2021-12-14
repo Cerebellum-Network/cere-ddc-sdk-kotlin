@@ -1,15 +1,6 @@
-plugins {
-    kotlin("jvm") version "1.5.10"
-
-    maven
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation(kotlin("stdlib"))
-
     implementation(project(":core"))
+
+    implementation("io.ktor:ktor-client-java:${Versions.ktor}")
+    implementation("io.ktor:ktor-client-jackson:${Versions.ktor}")
 }
