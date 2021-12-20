@@ -83,6 +83,33 @@ services:
       - ddc_network_nft
     volumes:
       - ./node-2-p2p-config.json:/config/p2p.json
+  ddc-node-3-nft:
+    container_name: 'ddc-node-3-nft'
+    image: 'ddc-node-test'
+    environment:
+      - 'HTTP_PORT=8183'
+      - 'HTTP_ADDRESS=http://localhost:8183'
+      - 'P2P_ADDRESS=/dns4/ddc-node-3-nft/tcp/5103'
+      - 'LOG_LEVEL=debug'
+      - 'LOG_JSON_FORMAT=false'
+      - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
+      - 'FAULT_DETECTION_UPDATE_NEIGHBORS_INTERVAL=1s'
+      - 'FAULT_DETECTION_SHORT_TRANSIENT_FAULT_TIMEOUT=4s'
+      - 'FAULT_DETECTION_LONG_TRANSIENT_FAULT_TIMEOUT=20s'
+      - 'FAULT_DETECTION_COMPLETE_FAULT_TIMEOUT=40s'
+      - 'TEST_ENABLED=true'
+      - 'TEST_DDC_NODES=${TEST_DDC_NODES}'
+      - 'NFT_STORAGE_ROUTING_TABLE_REBROADCAST_INTERVAL=3s'
+      - 'BEHAVIOUR_STORAGE_PARTITION_SIZE_LIMIT_BYTES=1000'
+      - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
+      - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
+    ports:
+      - '5103:5103'
+      - '8183:8183'
+    networks:
+      - ddc_network_nft
+    volumes:
+      - ./node-3-p2p-config.json:/config/p2p.json
 
 networks:
   ddc_network_nft:

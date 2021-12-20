@@ -5,11 +5,13 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.utils.*
 import io.ktor.util.*
+import io.ktor.utils.io.core.*
 import network.cere.ddc.core.extension.sha256
 import network.cere.ddc.core.signature.Scheme
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.text.toByteArray
 
 class HttpSecurity {
     var scheme: Scheme? = null
@@ -43,7 +45,7 @@ class HttpSecurity {
                         .joinToString(separator = ";")
 
                     val bodyHash = this[CONTENT_SHA_256_HEADER]
-                        ?: context.body.let { if (it is ByteArray) it.sha256() else if (it is EmptyContent) "" else it.toString() }
+                        ?: context.body.let { if (it is ByteArray) it else if (it is EmptyContent) "".toByteArray() else it.toString().toByteArray() }.sha256()
                     val content =
                         "${context.method.value}\n${context.url.encodedPath}\n${nodeId}\n${expireDate}\n${signedHeaders}\n$bodyHash"
 

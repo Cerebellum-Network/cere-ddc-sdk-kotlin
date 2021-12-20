@@ -130,7 +130,7 @@ class HttpTransportClient(
             HttpStatusCode.MultipleChoices -> {
                 val redirectNodes: List<Node> = response.receive()
                 redirectNodes.forEach { nodeAddresses[it.address] = it.id }
-                redirectToNodes(nftId, redirectNodes)
+                redirectToNodes(nftId, cid, redirectNodes)
             }
             else -> {
                 throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
@@ -164,9 +164,9 @@ class HttpTransportClient(
         return response.receive()
     }
 
-    private suspend fun redirectToNodes(nftId: String, redirectNodeAddresses: List<Node>): ByteArray {
+    private suspend fun redirectToNodes(nftId: String, cid: String, redirectNodeAddresses: List<Node>): ByteArray {
         redirectNodeAddresses.forEach { node ->
-            val response = client.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", node.address, nftId))
+            val response = client.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", node.address, nftId, cid))
 
             if (response.status == HttpStatusCode.OK) {
                 return response.readBytes()
