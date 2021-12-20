@@ -1,6 +1,6 @@
 package network.cere.ddc.core.signature
 
-interface Scheme {
+sealed interface Scheme {
 
     val name: String
     val publicKey: String
