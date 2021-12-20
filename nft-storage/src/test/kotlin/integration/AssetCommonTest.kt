@@ -16,9 +16,7 @@ class AssetCommonTest {
 
     private val scheme = Scheme.create(Scheme.ED_25519, privateKey)
     private val config = Config(
-        listOf(
-            Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT")
-        )
+        listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
     )
     private val client = HttpTransportClient(scheme, config)
     private val testSubject = NftStorage(client)

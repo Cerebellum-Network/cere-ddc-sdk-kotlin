@@ -5,13 +5,11 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.utils.*
 import io.ktor.util.*
-import io.ktor.utils.io.core.*
 import network.cere.ddc.core.extension.sha256
 import network.cere.ddc.core.signature.Scheme
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.text.toByteArray
 
 class HttpSecurity {
     var scheme: Scheme? = null
