@@ -3,7 +3,7 @@ version: "3"
 services:
   ddc-node-0:
     container_name: 'ddc-node-0'
-    image: 'ddc-node-test'
+    image: 'cerebellumnetwork/ddc-node:dev-latest'
     environment:
       - 'HTTP_PORT=8080'
       - 'HTTP_ADDRESS=http://localhost:8080'
@@ -30,7 +30,7 @@ services:
       - ./node-0-p2p-config.json:/config/p2p.json
   ddc-node-1:
     container_name: 'ddc-node-1'
-    image: 'ddc-node-test'
+    image: 'cerebellumnetwork/ddc-node:dev-latest'
     environment:
       - 'HTTP_PORT=8081'
       - 'HTTP_ADDRESS=http://localhost:8081'
@@ -57,7 +57,7 @@ services:
       - ./node-1-p2p-config.json:/config/p2p.json
   ddc-node-2:
     container_name: 'ddc-node-2'
-    image: 'ddc-node-test'
+    image: 'cerebellumnetwork/ddc-node:dev-latest'
     environment:
       - 'HTTP_PORT=8082'
       - 'HTTP_ADDRESS=http://localhost:8082'
@@ -85,7 +85,7 @@ services:
       - ./node-2-p2p-config.json:/config/p2p.json
   ddc-node-3:
     container_name: 'ddc-node-3'
-    image: 'ddc-node-test'
+    image: 'cerebellumnetwork/ddc-node:dev-latest'
     environment:
       - 'HTTP_PORT=8083'
       - 'HTTP_ADDRESS=http://localhost:8083'
