@@ -17,7 +17,7 @@ class AssetCommonTest {
     private val scheme = Scheme.create(Scheme.ED_25519, privateKey)
     private val config = Config(
         listOf(
-            Node(address = "http://localhost:8180", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT")
+            Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT")
         )
     )
     private val client = HttpTransportClient(scheme, config)
@@ -53,10 +53,10 @@ class AssetCommonTest {
     fun `Read asset redirect`() {
         //given
         val nodes = listOf(
-            Node(address = "http://localhost:8180", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"),
-            Node(address = "http://localhost:8181", id = "12D3KooWJ2h8af9sehgTKg6f2yPWYxLryVYbTAzpYQLLFp5GErxu"),
-            Node(address = "http://localhost:8182", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
-            Node(address = "http://localhost:8183", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
+            Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"),
+            Node(address = "http://localhost:8081", id = "12D3KooWJ2h8af9sehgTKg6f2yPWYxLryVYbTAzpYQLLFp5GErxu"),
+            Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
+            Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
         )
         val testSubject = NftStorageAsync(HttpTransportClient(scheme, Config(nodes)))
 

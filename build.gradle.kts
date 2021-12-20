@@ -1,15 +1,19 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
+plugins {
+    kotlin("jvm") version Versions.kotlin
 
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
-        classpath("com.avast.gradle:gradle-docker-compose-plugin:${Versions.docker}")
-    }
+    id("com.avast.gradle.docker-compose") version Versions.docker
+
+    maven
 }
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+
+    maven("https://jitpack.io")
+}
+
+group = "com.github.cerebellum-network"
 
 subprojects {
     repositories {
@@ -19,10 +23,16 @@ subprojects {
     }
 
     apply(plugin = "kotlin")
-    //apply(plugin = "docker-compose")
+    apply(plugin = "docker-compose")
 
     tasks.withType<Test> {
+        dependsOn(tasks.composeUp)
+        finalizedBy(tasks.composeDown)
         useJUnitPlatform()
+    }
+
+    dockerCompose {
+        useComposeFiles = listOf("${ rootProject.buildDir }/../docker-compose/docker-compose.yml")
     }
 
     afterEvaluate {
@@ -58,3 +68,6 @@ subprojects {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 }
+
+
+

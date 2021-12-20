@@ -9,8 +9,10 @@ import network.cere.ddc.nft.client.HttpTransportClient
 import network.cere.ddc.nft.model.metadata.Erc1155Metadata
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
 import org.assertj.core.api.AssertionsForInterfaceTypes.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Disabled
 class MetadataCommonTest {
 
     private val nftId = "MetadataNftId"
@@ -18,7 +20,7 @@ class MetadataCommonTest {
 
     private val scheme = Scheme.create(Scheme.ETHEREUM, privateKey)
     private val config = Config(
-        listOf(Node(address = "http://localhost:8180", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
+        listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
     )
     private val client = HttpTransportClient(scheme, config)
     private val testSubject = NftStorage(client)
@@ -58,10 +60,10 @@ class MetadataCommonTest {
     fun `Read metadata redirect`() {
         //given
         val nodes = listOf(
-            Node(address = "http://localhost:8180", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"),
-            Node(address = "http://localhost:8181", id = "12D3KooWJ2h8af9sehgTKg6f2yPWYxLryVYbTAzpYQLLFp5GErxu"),
-            Node(address = "http://localhost:8182", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
-            Node(address = "http://localhost:8183", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
+            Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"),
+            Node(address = "http://localhost:8081", id = "12D3KooWJ2h8af9sehgTKg6f2yPWYxLryVYbTAzpYQLLFp5GErxu"),
+            Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
+            Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
         )
         val testSubject = NftStorageAsync(HttpTransportClient(scheme, Config(nodes)))
 

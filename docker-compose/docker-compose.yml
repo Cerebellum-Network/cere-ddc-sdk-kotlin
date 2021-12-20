@@ -1,13 +1,13 @@
 version: "3"
 
 services:
-  ddc-node-0-nft:
-    container_name: 'ddc-node-0-nft'
+  ddc-node-0:
+    container_name: 'ddc-node-0'
     image: 'ddc-node-test'
     environment:
-      - 'HTTP_PORT=8180'
-      - 'HTTP_ADDRESS=http://localhost:8180'
-      - 'P2P_ADDRESS=/dns4/ddc-node-0-nft/tcp/5100'
+      - 'HTTP_PORT=8080'
+      - 'HTTP_ADDRESS=http://localhost:8080'
+      - 'P2P_ADDRESS=/dns4/ddc-node-0/tcp/5000'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
       - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
@@ -22,19 +22,19 @@ services:
       - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
       - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
     ports:
-      - '5100:5100'
-      - '8180:8180'
+      - '5000:5000'
+      - '8080:8080'
     networks:
       - ddc_network_nft
     volumes:
       - ./node-0-p2p-config.json:/config/p2p.json
-  ddc-node-1-nft:
-    container_name: 'ddc-node-1-nft'
+  ddc-node-1:
+    container_name: 'ddc-node-1'
     image: 'ddc-node-test'
     environment:
-      - 'HTTP_PORT=8181'
-      - 'HTTP_ADDRESS=http://localhost:8181'
-      - 'P2P_ADDRESS=/dns4/ddc-node-1-nft/tcp/5101'
+      - 'HTTP_PORT=8081'
+      - 'HTTP_ADDRESS=http://localhost:8081'
+      - 'P2P_ADDRESS=/dns4/ddc-node-1/tcp/5001'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
       - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
@@ -49,20 +49,20 @@ services:
       - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
       - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
     ports:
-      - '5101:5101'
-      - '8181:8181'
+      - '5001:5001'
+      - '8081:8081'
     networks:
       - ddc_network_nft
     volumes:
       - ./node-1-p2p-config.json:/config/p2p.json
-  ddc-node-2-nft:
-    container_name: 'ddc-node-2-nft'
+  ddc-node-2:
+    container_name: 'ddc-node-2'
     image: 'ddc-node-test'
     environment:
-      - 'HTTP_PORT=8182'
-      - 'HTTP_ADDRESS=http://localhost:8182'
-      - 'P2P_ADDRESS=/dns4/ddc-node-2-nft/tcp/5102'
-      - 'TEST_DDC_NODES=/dns4/ddc-node-0-nft/tcp/5100/p2p/12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT'
+      - 'HTTP_PORT=8082'
+      - 'HTTP_ADDRESS=http://localhost:8082'
+      - 'P2P_ADDRESS=/dns4/ddc-node-2/tcp/5002'
+      - 'TEST_DDC_NODES=/dns4/ddc-node-0/tcp/5000/p2p/12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
       - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
@@ -77,19 +77,19 @@ services:
       - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
       - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
     ports:
-      - '5102:5102'
-      - '8182:8182'
+      - '5002:5002'
+      - '8082:8082'
     networks:
       - ddc_network_nft
     volumes:
       - ./node-2-p2p-config.json:/config/p2p.json
-  ddc-node-3-nft:
-    container_name: 'ddc-node-3-nft'
+  ddc-node-3:
+    container_name: 'ddc-node-3'
     image: 'ddc-node-test'
     environment:
-      - 'HTTP_PORT=8183'
-      - 'HTTP_ADDRESS=http://localhost:8183'
-      - 'P2P_ADDRESS=/dns4/ddc-node-3-nft/tcp/5103'
+      - 'HTTP_PORT=8083'
+      - 'HTTP_ADDRESS=http://localhost:8083'
+      - 'P2P_ADDRESS=/dns4/ddc-node-3/tcp/5003'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
       - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
@@ -104,8 +104,8 @@ services:
       - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
       - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
     ports:
-      - '5103:5103'
-      - '8183:8183'
+      - '5003:5003'
+      - '8083:8083'
     networks:
       - ddc_network_nft
     volumes:
