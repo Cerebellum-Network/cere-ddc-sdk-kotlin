@@ -1,6 +1,6 @@
 package network.cere.ddc.crypto.signature
 
-interface Scheme {
+sealed interface Scheme {
 
     companion object {
         const val SR_25519 = "sr25519"
@@ -10,7 +10,7 @@ interface Scheme {
         fun create(scheme: String): Scheme = when (scheme.lowercase()) {
             SR_25519 -> Sr25519()
             ED_25519 -> Ed25519()
-            ETHEREUM -> Ed25519()
+            ETHEREUM -> Ethereum()
             else -> throw IllegalArgumentException("Unknown scheme")
         }
     }
