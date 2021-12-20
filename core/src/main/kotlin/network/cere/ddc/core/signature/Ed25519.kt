@@ -1,8 +1,8 @@
-package network.cere.ddc.crypto.signature
+package network.cere.ddc.core.signature
 
-import network.cere.ddc.crypto.extension.hexToBytes
-import network.cere.ddc.crypto.extension.toHex
-import network.cere.ddc.crypto.signature.Scheme.Companion.ED_25519
+import network.cere.ddc.core.extension.hexToBytes
+import network.cere.ddc.core.extension.toHex
+import network.cere.ddc.core.signature.Scheme.Companion.ED_25519
 import org.bouncycastle.math.ec.rfc8032.Ed25519
 
 class Ed25519(privateKey: String) : Scheme {

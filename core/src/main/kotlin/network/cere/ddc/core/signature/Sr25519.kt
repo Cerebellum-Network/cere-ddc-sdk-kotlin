@@ -1,11 +1,11 @@
-package network.cere.ddc.crypto.signature
+package network.cere.ddc.core.signature
 
 import com.debuggor.schnorrkel.sign.ExpansionMode
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.debuggor.schnorrkel.sign.SigningContext
-import network.cere.ddc.crypto.extension.hexToBytes
-import network.cere.ddc.crypto.extension.toHex
-import network.cere.ddc.crypto.signature.Scheme.Companion.SR_25519
+import network.cere.ddc.core.extension.hexToBytes
+import network.cere.ddc.core.extension.toHex
+import network.cere.ddc.core.signature.Scheme.Companion.SR_25519
 
 class Sr25519(privateKey: String) : Scheme {
 

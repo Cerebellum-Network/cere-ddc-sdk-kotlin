@@ -1,4 +1,4 @@
-package network.cere.ddc.crypto.signature
+package network.cere.ddc.core.signature
 
 interface Scheme {
 

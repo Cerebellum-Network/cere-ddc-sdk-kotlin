@@ -1,131 +1,192 @@
 package network.cere.ddc.nft.client
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.java.*
 import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import network.cere.ddc.crypto.extension.sha256
-import network.cere.ddc.crypto.model.Node
-import network.cere.ddc.crypto.security.HttpSecurity
-import network.cere.ddc.crypto.signature.Scheme
-import network.cere.ddc.nft.exception.AssetReadNftException
-import network.cere.ddc.nft.exception.AssetSaveNftException
-import network.cere.ddc.nft.model.Metadata
+import network.cere.ddc.core.extension.sha256
+import network.cere.ddc.core.http.HttpSecurity
+import network.cere.ddc.core.http.defaultHttpClient
+import network.cere.ddc.core.model.Node
+import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.nft.Config
+import network.cere.ddc.nft.exception.*
 import network.cere.ddc.nft.model.NftPath
-import java.time.Duration
+import network.cere.ddc.nft.model.metadata.Metadata
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 class HttpTransportClient(
     private val scheme: Scheme,
-    private val trustedNodes: List<Node>,
-    httpClient: HttpClient = HttpClient(Java) {
-        install(HttpTimeout) {
-            requestTimeoutMillis = Duration.ofMinutes(5).toMillis()
-            connectTimeoutMillis = Duration.ofMinutes(3).toMillis()
-        }
-        engine { config { version(java.net.http.HttpClient.Version.HTTP_2) } }
-    },
+    private val config: Config,
+    httpClient: HttpClient = defaultHttpClient(),
 ) : TransportClient {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     private companion object {
         const val CONTENT_PATH_HEADER = "Content-Path"
-        const val CONTENT_SHA_256 = "Content-SHA256"
-        const val CONTENT_SIGNATURE = "Content-Signature"
+        const val CONTENT_SHA_256_HEADER = "Content-SHA256"
+        const val CONTENT_SIGNATURE_HEADER = "Content-Signature"
+        const val NFT_STANDART_HEADER = "Nft-Standard"
         const val BASIC_NFT_URL = "%s/api/rest/nfts/%s"
     }
 
+    private val client: HttpClient
+    private val nodeFlag = AtomicInteger()
+    private val objectMapper = jacksonObjectMapper()
+    private val nodeAddresses =
+        java.util.concurrent.ConcurrentHashMap(config.trustedNodes.associate { it.address to it.id })
+
     init {
-        if (trustedNodes.isEmpty()) {
+        if (config.trustedNodes.isEmpty()) {
             throw IllegalStateException("Trusted node list is empty")
         }
-    }
 
-    private val nodeFlag = AtomicInteger()
-    private val httpClient = httpClient.config {
-        install(JsonFeature)
-
-        install(HttpSecurity) {
-            scheme = this@HttpTransportClient.scheme
-            nodes = this@HttpTransportClient.trustedNodes
-        }
-
-        followRedirects = false
-        expectSuccess = false
-    }
-
-
-    override suspend fun storeAsset(nftId: String, data: ByteArray, name: String): NftPath {
-        val hash = data.sha256()
-        val node = nextNode()
-        val response =
-            httpClient.request<HttpResponse>(
-                String.format("$BASIC_NFT_URL/assets", node.address, nftId)
-            ) {
-                body = data
-                method = HttpMethod.Put
-                headers {
-                    set(CONTENT_SHA_256, hash)
-                    set(CONTENT_PATH_HEADER, name)
-                    set(CONTENT_SIGNATURE, scheme.sign(hash.toByteArray()))
-                }
+        client = httpClient.config {
+            install(HttpTimeout) {
+                requestTimeoutMillis = config.requestTimeout.toMillis()
+                connectTimeoutMillis = config.connectTimeout.toMillis()
             }
 
+            install(JsonFeature)
+
+            install(HttpSecurity) {
+                expiresAfter = config.requestExpiration
+                scheme = this@HttpTransportClient.scheme
+                nodeAddresses = this@HttpTransportClient.nodeAddresses
+            }
+
+            followRedirects = false
+            expectSuccess = false
+        }
+    }
+
+    override suspend fun storeAsset(nftId: String, data: ByteArray, name: String): NftPath {
+        try {
+            return storeData("$BASIC_NFT_URL/assets", nftId, data) {
+                headers {
+                    set(CONTENT_PATH_HEADER, name)
+                }
+            }
+        } catch (e: Exception) {
+            throw AssetSaveNftException("Couldn't store asset", e)
+        }
+
+    }
+
+    override suspend fun readAsset(nftId: String, nftPath: NftPath): ByteArray {
+        try {
+            return readData("$BASIC_NFT_URL/assets/%s", nftId, nftPath)
+        } catch (e: Exception) {
+            throw AssetReadNftException("Couldn't read asset", e)
+        }
+    }
+
+    override suspend fun storeMetadata(nftId: String, metadata: Metadata): NftPath {
+        try {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            val data = objectMapper.writeValueAsBytes(metadata)
+
+            return storeData("$BASIC_NFT_URL/metadata", nftId, data) {
+                headers {
+                    set(NFT_STANDART_HEADER, metadata.schema)
+                }
+            }
+        } catch (e: Exception) {
+            throw MetadataSaveNftException("Couldn't store metadata", e)
+        }
+
+    }
+
+    override suspend fun <T : Metadata> readMetadata(nftId: String, nftPath: NftPath, schema: Class<T>): T {
+        try {
+            val bytes = readData("$BASIC_NFT_URL/metadata/%s", nftId, nftPath)
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            return objectMapper.readValue(bytes, schema)
+        } catch (e: Exception) {
+            throw MetadataReadNftException("Couldn't read metadata", e)
+        }
+    }
+
+    override fun close() {
+        client.close()
+    }
+
+    private suspend fun readData(path: String, nftId: String, nftPath: NftPath): ByteArray {
+        val node = nextNode()
+        val cid = parseCid(nftPath)
+        val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
+
+        return when (response.status) {
+            HttpStatusCode.OK -> {
+                response.readBytes()
+            }
+            HttpStatusCode.MultipleChoices -> {
+                val redirectNodes: List<Node> = response.receive()
+                redirectNodes.forEach { nodeAddresses[it.address] = it.id }
+                redirectToNodes(nftId, redirectNodes)
+            }
+            else -> {
+                throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
+            }
+        }
+    }
+
+    private suspend inline fun storeData(
+        path: String,
+        nftId: String,
+        data: ByteArray,
+        block: HttpRequestBuilder.() -> Unit
+    ): NftPath {
+        val hash = data.sha256()
+        val node = nextNode()
+        val response = client.request<HttpResponse>(String.format(path, node.address, nftId)) {
+            method = HttpMethod.Put
+            body = data
+            headers {
+                set(CONTENT_SHA_256_HEADER, hash)
+                set(CONTENT_SIGNATURE_HEADER, scheme.sign(hash.toByteArray()))
+            }
+
+            block()
+        }
+
         if (HttpStatusCode.Created != response.status) {
-            throw AssetSaveNftException("Couldn't save asset to ")
+            throw NftException("Invalid response status for node=$node. Response: status='${response.status}' body='${response.receive<String>()}'")
         }
 
         return response.receive()
     }
 
-    override suspend fun readAsset(nftId: String, nftPath: NftPath): ByteArray {
-        val node = nextNode()
-        val response = httpClient.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", node.address, nftId))
-
-        return when (response.status) {
-            HttpStatusCode.OK -> {
-                response.receive()
-            }
-            HttpStatusCode.MultipleChoices -> {
-                //ToDo parse as Node with Id, not only address
-                redirectToNodes(nftId, response.receive())
-                    ?: throw AssetReadNftException("Couldn't find asset from redirection")
-            }
-            else -> {
-                throw AssetReadNftException("Invalid node response from node: $node. Response status: ${response.status}")
-            }
-        }
-    }
-
-    override suspend fun storeMetadata(nftId: String, metadata: Metadata): NftPath {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun readMetadata(nftId: String, nftPath: NftPath): ByteArray {
-        TODO("Not yet implemented")
-    }
-
-    private suspend fun redirectToNodes(nftId: String, redirectNodeAddresses: List<String>): ByteArray? {
-        redirectNodeAddresses.forEach { address ->
-            val response = httpClient.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", address, nftId))
+    private suspend fun redirectToNodes(nftId: String, redirectNodeAddresses: List<Node>): ByteArray {
+        redirectNodeAddresses.forEach { node ->
+            val response = client.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", node.address, nftId))
 
             if (response.status == HttpStatusCode.OK) {
-                return response.receive()
+                return response.readBytes()
             }
 
-            //TODO debug logging for unsuccessful nodes
+            logger.warn("Couldn't get data from redirected node=$node. Response: status='${response.status}' body='${response.receive<String>()}'")
         }
 
-        throw AssetReadNftException("Couldn't get asset from nodes: $redirectNodeAddresses")
+        throw NftException("Couldn't get asset from nodes: $redirectNodeAddresses")
     }
 
+    private fun parseCid(nftPath: NftPath): String {
+        val path = nftPath.url.split("/")
 
-    private fun parseCid(nftPath: NftPath) {
-        nftPath.url
+        if (path.size != 5 || path[3].trim().isEmpty()) {
+            throw IllegalArgumentException("Invalid nft path url")
+        }
+
+        return path[3]
     }
 
-    private fun nextNode() = trustedNodes[nodeFlag.getAndIncrement() % trustedNodes.size]
+    private fun nextNode() = config.trustedNodes[nodeFlag.getAndIncrement() % config.trustedNodes.size]
 }

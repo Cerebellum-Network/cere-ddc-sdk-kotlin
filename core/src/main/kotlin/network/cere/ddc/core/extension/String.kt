@@ -1,12 +1,12 @@
-package network.cere.ddc.crypto.extension
+package network.cere.ddc.core.extension
 
 import org.bouncycastle.util.encoders.Hex
 import java.security.MessageDigest
 
-private const val HEX_PREFIX = "0x"
+const val HEX_PREFIX = "0x"
 
 fun ByteArray.sha256(): String {
-    return MessageDigest.getInstance("SHA-256").digest(this).toHex()
+    return MessageDigest.getInstance("SHA-256").digest(this).toHex(false)
 }
 
 fun String.hexToBytes(): ByteArray = Hex.decode(this.removePrefix(HEX_PREFIX))

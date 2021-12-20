@@ -1,4 +1,4 @@
-package network.cere.ddc.crypto.exception
+package network.cere.ddc.core.exception
 
 open class DdcException(message: String?, cause: Throwable?) : RuntimeException(message, cause) {
 

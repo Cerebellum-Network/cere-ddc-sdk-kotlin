@@ -1,13 +1,14 @@
 package network.cere.ddc.nft.client
 
 import network.cere.ddc.nft.model.NftPath
-import network.cere.ddc.nft.model.Metadata
+import network.cere.ddc.nft.model.metadata.Metadata
+import java.io.Closeable
 
-interface TransportClient {
+interface TransportClient: Closeable {
 
     suspend fun storeAsset(nftId: String, data: ByteArray, name: String): NftPath
     suspend fun readAsset(nftId: String, nftPath: NftPath): ByteArray
     suspend fun storeMetadata(nftId: String, metadata: Metadata): NftPath
-    suspend fun readMetadata(nftId: String, nftPath: NftPath): ByteArray
+    suspend fun <T : Metadata> readMetadata(nftId: String, nftPath: NftPath, schema: Class<T>): T
 
 }

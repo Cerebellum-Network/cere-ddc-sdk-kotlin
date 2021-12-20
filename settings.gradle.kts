@@ -1,2 +1,3 @@
 rootProject.name = "cere-ddc-sdk-kotlin"
-include("core", "nft-storage")
+include("core")
+include("nft-storage")
