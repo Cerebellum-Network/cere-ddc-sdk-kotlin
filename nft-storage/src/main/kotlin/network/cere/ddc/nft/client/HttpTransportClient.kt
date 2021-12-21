@@ -1,6 +1,7 @@
 package network.cere.ddc.nft.client
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.features.*
@@ -15,6 +16,8 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
 import network.cere.ddc.nft.exception.*
+import network.cere.ddc.nft.model.Edek
+import network.cere.ddc.nft.model.EdekRequest
 import network.cere.ddc.nft.model.NftPath
 import network.cere.ddc.nft.model.metadata.Metadata
 import org.slf4j.LoggerFactory
@@ -101,7 +104,6 @@ class HttpTransportClient(
         } catch (e: Exception) {
             throw MetadataSaveNftException("Couldn't store metadata", e)
         }
-
     }
 
     override suspend fun <T : Metadata> readMetadata(nftId: String, nftPath: NftPath, schema: Class<T>): T {
@@ -112,6 +114,29 @@ class HttpTransportClient(
             return objectMapper.readValue(bytes, schema)
         } catch (e: Exception) {
             throw MetadataReadNftException("Couldn't read metadata", e)
+        }
+    }
+
+    override suspend fun storeEdek(nftId: String, metadataNftPath: NftPath, edek: Edek) {
+        try {
+            val cid = parseCid(metadataNftPath)
+            @Suppress("BlockingMethodInNonBlockingContext")
+            val data = objectMapper.writeValueAsBytes(EdekRequest(cid, edek))
+
+            storeData("$BASIC_NFT_URL/metadata/$cid/edek", nftId, data)
+        } catch (e: Exception) {
+            throw EdekSaveNftException("Couldn't store edek", e)
+        }
+    }
+
+    override suspend fun readEdek(nftId: String, metadataNftPath: NftPath, publicKeyHex: String): Edek {
+        try {
+            val bytes = readData("$BASIC_NFT_URL/metadata/%s/$publicKeyHex", nftId, metadataNftPath)
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            return objectMapper.readValue<EdekRequest>(bytes).edek
+        } catch (e: Exception) {
+            throw EdekReadNftException("Couldn't read edek", e)
         }
     }
 
@@ -143,7 +168,7 @@ class HttpTransportClient(
         path: String,
         nftId: String,
         data: ByteArray,
-        block: HttpRequestBuilder.() -> Unit
+        block: HttpRequestBuilder.() -> Unit = {}
     ): NftPath {
         val hash = data.sha256()
         val node = nextNode()
