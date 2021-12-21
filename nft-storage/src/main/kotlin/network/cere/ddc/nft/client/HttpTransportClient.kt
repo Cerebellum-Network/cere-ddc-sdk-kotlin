@@ -32,7 +32,7 @@ class HttpTransportClient(
         const val CONTENT_PATH_HEADER = "Content-Path"
         const val CONTENT_SHA_256_HEADER = "Content-SHA256"
         const val CONTENT_SIGNATURE_HEADER = "Content-Signature"
-        const val NFT_STANDART_HEADER = "Nft-Standard"
+        const val NFT_STANDARD_HEADER = "Nft-Standard"
         const val BASIC_NFT_URL = "%s/api/rest/nfts/%s"
     }
 
@@ -94,7 +94,7 @@ class HttpTransportClient(
 
             return storeData("$BASIC_NFT_URL/metadata", nftId, data) {
                 headers {
-                    set(NFT_STANDART_HEADER, metadata.schema)
+                    set(NFT_STANDARD_HEADER, metadata.schema)
                 }
             }
         } catch (e: Exception) {

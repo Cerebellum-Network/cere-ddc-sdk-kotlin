@@ -43,7 +43,7 @@ internal class HttpTransportClientTest {
     fun beforeEach() {
         scheme = mock {
             on { it.name } doAnswer { schemeName }
-            on { it.publicKey } doAnswer { publicKey }
+            on { it.publicKeyHex } doAnswer { publicKey }
             on { it.sign(org.mockito.kotlin.any()) } doAnswer { "signature" }
         }
 

@@ -34,7 +34,7 @@ class HttpSecurity {
                 context.headers {
                     set("Expires", expireDate)
                     set("Signing-Algorithm", feature.scheme!!.name)
-                    set("Client-Public-Key", feature.scheme!!.publicKey)
+                    set("Client-Public-Key", feature.scheme!!.publicKeyHex)
                     set("Node-Id", nodeId)
                     feature.signedHeaders.forEach { append("Signed-Headers", it) }
 

@@ -14,23 +14,23 @@ import org.komputing.khex.extensions.toNoPrefixHexString
 import org.komputing.khex.model.HexString
 import java.security.SignatureException
 
-class Ethereum(privateKey: String) : Scheme {
+class Ethereum(privateKeyHex: String) : Scheme {
 
-    private val pair: ECKeyPair
+    private val keyPair: ECKeyPair
 
     override val name = ETHEREUM
-    override val publicKey: String
+    override val publicKeyHex: String
 
     init {
-        val private = PrivateKey(privateKey.hexToBytes())
-        val public = publicKeyFromPrivate(private)
+        val privateKey = PrivateKey(privateKeyHex.hexToBytes())
+        val publicKey = publicKeyFromPrivate(privateKey)
 
-        pair = ECKeyPair(private, public)
-        publicKey = pair.publicKey.toAddress().hex
+        keyPair = ECKeyPair(privateKey, publicKey)
+        publicKeyHex = keyPair.publicKey.toAddress().hex
     }
 
     override fun sign(data: ByteArray): String {
-        return "${HEX_PREFIX}${pair.signMessage(data).toHex()}"
+        return "${HEX_PREFIX}${keyPair.signMessage(data).toHex()}"
     }
 
     override fun verify(data: ByteArray, signature: String): Boolean {
@@ -57,7 +57,7 @@ class Ethereum(privateKey: String) : Scheme {
             return false
         }
 
-        return address.equals(publicKey.removePrefix(HEX_PREFIX), true)
+        return address.equals(publicKeyHex.removePrefix(HEX_PREFIX), true)
     }
 
 
