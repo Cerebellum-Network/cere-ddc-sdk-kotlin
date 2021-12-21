@@ -2,8 +2,6 @@ plugins {
     kotlin("jvm") version Versions.kotlin
 
     id("com.avast.gradle.docker-compose") version Versions.docker
-
-    maven
 }
 
 repositories {
@@ -13,8 +11,6 @@ repositories {
     maven("https://jitpack.io")
 }
 
-group = "com.github.cerebellum-network"
-
 subprojects {
     repositories {
         mavenLocal()
@@ -22,17 +18,11 @@ subprojects {
         maven("https://jitpack.io")
     }
 
+    group = "com.github.cerebellum-network.cere-ddc-sdk-kotlin"
+
     apply(plugin = "kotlin")
+    apply(plugin = "maven")
     apply(plugin = "docker-compose")
-
-    tasks.withType<Test> {
-        useJUnitPlatform()
-    }
-
-    dockerCompose {
-        isRequiredBy(tasks.test)
-        useComposeFiles = listOf("${ rootProject.buildDir }/../docker-compose/docker-compose.yml")
-    }
 
     afterEvaluate {
         dependencies {
@@ -65,6 +55,15 @@ subprojects {
     }
     compileTestKotlin.kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
+
+    dockerCompose {
+        isRequiredBy(tasks.test)
+        useComposeFiles = listOf("${ rootProject.buildDir }/../docker-compose/docker-compose.yml")
     }
 }
 
