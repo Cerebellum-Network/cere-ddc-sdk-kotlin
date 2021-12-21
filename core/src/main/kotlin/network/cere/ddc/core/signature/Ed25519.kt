@@ -1,9 +1,9 @@
 package network.cere.ddc.core.signature
 
 import network.cere.ddc.core.extension.hexToBytes
-import network.cere.ddc.core.extension.toHex
 import network.cere.ddc.core.signature.Scheme.Companion.ED_25519
 import org.bouncycastle.math.ec.rfc8032.Ed25519
+import org.komputing.khex.extensions.toHexString
 
 class Ed25519(privateKeyHex: String) : Scheme {
 
@@ -13,14 +13,14 @@ class Ed25519(privateKeyHex: String) : Scheme {
     }
 
     override val name = ED_25519
-    override val publicKeyHex = publicKey.toHex()
+    override val publicKeyHex = publicKey.toHexString()
 
     override fun sign(data: ByteArray): String {
         val signatureBytes = ByteArray(Ed25519.SIGNATURE_SIZE)
 
         Ed25519.sign(privateKey, 0, publicKey, 0, data, 0, data.size, signatureBytes, 0)
 
-        return signatureBytes.toHex()
+        return signatureBytes.toHexString()
     }
 
     override fun verify(data: ByteArray, signature: String) =

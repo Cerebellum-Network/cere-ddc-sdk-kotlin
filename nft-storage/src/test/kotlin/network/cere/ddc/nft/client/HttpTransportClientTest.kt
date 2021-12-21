@@ -126,8 +126,6 @@ internal class HttpTransportClientTest {
     fun `Read asset redirect`() {
         runBlocking {
             //given
-            val newId = "321456"
-            val redirect = """[{"id": "$newId", "address": "http://localhost:${server.port()}" }]"""
             val data = "testStoreAsset".toByteArray()
             val path = NftPath("cns://routing-key/someCid/shadow.jar")
 

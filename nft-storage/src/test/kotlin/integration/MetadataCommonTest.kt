@@ -5,7 +5,6 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
 import network.cere.ddc.nft.NftStorage
-import network.cere.ddc.nft.NftStorageAsync
 import network.cere.ddc.nft.client.HttpTransportClient
 import network.cere.ddc.nft.model.metadata.Erc1155Metadata
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
@@ -32,7 +31,7 @@ class MetadataCommonTest {
             Erc721Metadata(name = "testName", description = "testDescription", image = "http://image-site.com")
 
         //when
-        val result = testSubject.storeMetadata(nftId, metadata)
+        val result = testSubject.storeMetadata(nftId, metadata).join()
 
         //then
         result.url matches "cns:///.*/metadata.json".toRegex()
@@ -47,10 +46,10 @@ class MetadataCommonTest {
             image = "http://image-site.com",
             decimals = 10
         )
-        val nftPath = testSubject.storeMetadata(nftId, metadata)
+        val nftPath = testSubject.storeMetadata(nftId, metadata).join()
 
         //when
-        val result = testSubject.readMetadata(nftId, nftPath, Erc1155Metadata::class.java)
+        val result = testSubject.readMetadata(nftId, nftPath, Erc1155Metadata::class.java).join()
 
         //then
         result shouldBe metadata
@@ -65,7 +64,7 @@ class MetadataCommonTest {
             Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
             Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
         )
-        val testSubject = NftStorageAsync(HttpTransportClient(scheme, Config(nodes)))
+        val testSubject = NftStorage(HttpTransportClient(scheme, Config(nodes)))
 
         val metadata = Erc1155Metadata(
             name = "testName",
@@ -80,7 +79,7 @@ class MetadataCommonTest {
 
         //when
         val resultDirectly = nodes.map {
-            val client = NftStorageAsync(HttpTransportClient(scheme, Config(listOf(it))))
+            val client = NftStorage(HttpTransportClient(scheme, Config(listOf(it))))
             client.readMetadata(nftId, nftPath, Erc1155Metadata::class.java)
         }
 

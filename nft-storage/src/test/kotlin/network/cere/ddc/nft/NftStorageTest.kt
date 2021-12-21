@@ -27,7 +27,7 @@ internal class NftStorageTest {
             whenever(client.storeAsset(nftId, data, fileName)).thenReturn(NftPath(url))
 
             //when
-            val result = testSubject.storeAsset(nftId, data, fileName)
+            val result = testSubject.storeAsset(nftId, data, fileName).join()
 
             //then
             result shouldBe NftPath(url)
@@ -47,7 +47,7 @@ internal class NftStorageTest {
             whenever(client.readAsset(nftId, NftPath(url))).thenReturn(data)
 
             //when
-            val result = testSubject.readAsset(nftId, NftPath(url))
+            val result = testSubject.readAsset(nftId, NftPath(url)).join()
 
             //then
             result shouldBe data

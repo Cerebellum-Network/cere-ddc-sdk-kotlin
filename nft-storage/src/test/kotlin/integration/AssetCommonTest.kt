@@ -5,7 +5,6 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
 import network.cere.ddc.nft.NftStorage
-import network.cere.ddc.nft.NftStorageAsync
 import network.cere.ddc.nft.client.HttpTransportClient
 import org.junit.jupiter.api.Test
 
@@ -28,7 +27,7 @@ class AssetCommonTest {
         val name = "someAsset.jpeg"
 
         //when
-        val result = testSubject.storeAsset(nftId, asset, name)
+        val result = testSubject.storeAsset(nftId, asset, name).join()
 
         //then
         result.url matches "cns:///.*/$name".toRegex()
@@ -38,10 +37,10 @@ class AssetCommonTest {
     fun `Read asset`() {
         //given
         val asset = "Asset for reading".toByteArray()
-        val nftPath = testSubject.storeAsset(nftId, asset, "someReadAsset.jpeg")
+        val nftPath = testSubject.storeAsset(nftId, asset, "someReadAsset.jpeg").join()
 
         //when
-        val result = testSubject.readAsset(nftId, nftPath)
+        val result = testSubject.readAsset(nftId, nftPath).join()
 
         //then
         result shouldBe asset
@@ -56,7 +55,7 @@ class AssetCommonTest {
             Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
             Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
         )
-        val testSubject = NftStorageAsync(HttpTransportClient(scheme, Config(nodes)))
+        val testSubject = NftStorage(HttpTransportClient(scheme, Config(nodes)))
 
         val asset = "Asset for storing with redirect".toByteArray()
         val name = "someAsset.jpeg"
@@ -67,7 +66,7 @@ class AssetCommonTest {
 
         //when
         val resultDirectly = nodes.map {
-            val client = NftStorageAsync(HttpTransportClient(scheme, Config(listOf(it))))
+            val client = NftStorage(HttpTransportClient(scheme, Config(listOf(it))))
             client.readAsset(nftId, nftPath)
         }
 

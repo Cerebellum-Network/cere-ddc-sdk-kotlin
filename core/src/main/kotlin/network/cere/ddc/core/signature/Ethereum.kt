@@ -1,6 +1,5 @@
 package network.cere.ddc.core.signature
 
-import network.cere.ddc.core.extension.HEX_PREFIX
 import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.core.signature.Scheme.Companion.ETHEREUM
 import org.kethereum.crypto.*
@@ -10,6 +9,7 @@ import org.kethereum.keccakshortcut.keccak
 import org.kethereum.model.ECKeyPair
 import org.kethereum.model.PrivateKey
 import org.kethereum.model.SignatureData
+import org.komputing.khex.extensions.prepend0xPrefix
 import org.komputing.khex.extensions.toNoPrefixHexString
 import org.komputing.khex.model.HexString
 import java.security.SignatureException
@@ -29,9 +29,7 @@ class Ethereum(privateKeyHex: String) : Scheme {
         publicKeyHex = keyPair.publicKey.toAddress().hex
     }
 
-    override fun sign(data: ByteArray): String {
-        return "${HEX_PREFIX}${keyPair.signMessage(data).toHex()}"
-    }
+    override fun sign(data: ByteArray): String = HexString(keyPair.signMessage(data).toHex()).prepend0xPrefix().string
 
     override fun verify(data: ByteArray, signature: String): Boolean {
         val signatureBytes = signature.hexToBytes()
@@ -57,7 +55,7 @@ class Ethereum(privateKeyHex: String) : Scheme {
             return false
         }
 
-        return address.equals(publicKeyHex.removePrefix(HEX_PREFIX), true)
+        return address.equals(publicKeyHex.substring(2), true)
     }
 
 
