@@ -1,7 +1,7 @@
 package network.cere.ddc.core.signature
 
 import network.cere.ddc.core.extension.hexToBytes
-import network.cere.ddc.core.signature.Scheme.Companion.ETHEREUM
+import network.cere.ddc.core.signature.Scheme.Companion.SECP_256_K_1
 import org.kethereum.crypto.*
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toHexStringZeroPadded
@@ -14,11 +14,11 @@ import org.komputing.khex.extensions.toNoPrefixHexString
 import org.komputing.khex.model.HexString
 import java.security.SignatureException
 
-class Ethereum(privateKeyHex: String) : Scheme {
+class Secp256k1(privateKeyHex: String) : Scheme {
 
     private val keyPair: ECKeyPair
 
-    override val name = ETHEREUM
+    override val name = SECP_256_K_1
     override val publicKeyHex: String
 
     init {

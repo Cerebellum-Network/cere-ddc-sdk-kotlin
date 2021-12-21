@@ -17,7 +17,7 @@ class MetadataCommonTest {
     private val nftId = "MetadataNftId"
     private val privateKey = "fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19"
 
-    private val scheme = Scheme.create(Scheme.ETHEREUM, privateKey)
+    private val scheme = Scheme.create(Scheme.SECP_256_K_1, privateKey)
     private val config = Config(
         listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
     )

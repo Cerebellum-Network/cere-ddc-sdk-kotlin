@@ -1,6 +1,7 @@
 package integration
 
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.DelicateCoroutinesApi
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
@@ -8,6 +9,7 @@ import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
 import org.junit.jupiter.api.Test
 
+@OptIn(DelicateCoroutinesApi::class)
 class AssetCommonTest {
 
     private val nftId = "AssetNftId"
