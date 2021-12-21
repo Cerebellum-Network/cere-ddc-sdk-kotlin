@@ -3,7 +3,7 @@ object Versions {
     val ktor = "1.6.3"
     val junit = "5.8.2"
     val kethereum = "0.85.3"
-    val assertj = "3.21.0"
+    val kotest = "5.0.1"
     val bouncyCastle = "1.69"
     val khex = "1.1.2"
     val mockito = "4.0.0"

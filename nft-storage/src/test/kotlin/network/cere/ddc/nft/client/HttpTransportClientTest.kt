@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.http.MimeType
+import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.extension.sha256
@@ -11,7 +12,6 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
 import network.cere.ddc.nft.model.NftPath
-import org.assertj.core.api.AssertionsForInterfaceTypes.assertThat
 import org.junit.jupiter.api.*
 import org.mockito.Mockito
 import org.mockito.kotlin.doAnswer
@@ -77,7 +77,7 @@ internal class HttpTransportClientTest {
             val result = testSubject.storeAsset(nftId, data.toByteArray(), fileName)
 
             //then
-            assertThat(result).isEqualTo(NftPath("cns://routing-key/cid/$fileName"))
+            result shouldBe NftPath("cns://routing-key/cid/$fileName")
             server.verify(
                 putRequestedFor(urlEqualTo("/api/rest/nfts/$nftId/assets"))
                     .withRequestBody(binaryEqualTo(data.toByteArray()))
@@ -110,7 +110,7 @@ internal class HttpTransportClientTest {
             val result = testSubject.readAsset(nftId, path)
 
             //then
-            assertThat(result).isEqualTo(data)
+            result shouldBe data
             server.verify(
                 getRequestedFor(urlEqualTo("/api/rest/nfts/$nftId/assets/someCid"))
                     .withHeader("Node-Id", equalTo(nodeId))
@@ -118,7 +118,6 @@ internal class HttpTransportClientTest {
                     .withHeader("Signing-Algorithm", equalTo(schemeName))
                     .withHeader("Client-Public-Key", equalTo(publicKey))
             )
-
             Mockito.verify(scheme).sign(org.mockito.kotlin.any())
         }
     }
@@ -142,7 +141,7 @@ internal class HttpTransportClientTest {
             val result = testSubject.readAsset(nftId, path)
 
             //then
-            assertThat(result).isEqualTo(data)
+            result shouldBe data
             server.verify(
                 getRequestedFor(urlEqualTo("/api/rest/nfts/$nftId/assets/someCid"))
                     .withHeader("Node-Id", equalTo(nodeId))

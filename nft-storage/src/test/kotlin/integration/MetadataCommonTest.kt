@@ -1,5 +1,6 @@
 package integration
 
+import io.kotest.matchers.shouldBe
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
@@ -8,7 +9,6 @@ import network.cere.ddc.nft.NftStorageAsync
 import network.cere.ddc.nft.client.HttpTransportClient
 import network.cere.ddc.nft.model.metadata.Erc1155Metadata
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
-import org.assertj.core.api.AssertionsForInterfaceTypes.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -35,7 +35,7 @@ class MetadataCommonTest {
         val result = testSubject.storeMetadata(nftId, metadata)
 
         //then
-        assertThat(result.url).matches("cns:///.*/metadata.json")
+        result.url matches "cns:///.*/metadata.json".toRegex()
     }
 
     @Test
@@ -53,7 +53,7 @@ class MetadataCommonTest {
         val result = testSubject.readMetadata(nftId, nftPath, Erc1155Metadata::class.java)
 
         //then
-        assertThat(result).isEqualTo(metadata)
+        result shouldBe metadata
     }
 
     @Test
@@ -86,7 +86,7 @@ class MetadataCommonTest {
 
         //then
         resultDirectly.forEach {
-            assertThat(it.join()).isEqualTo(metadata)
+            it.join() shouldBe metadata
         }
     }
 }

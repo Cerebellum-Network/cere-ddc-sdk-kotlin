@@ -1,6 +1,8 @@
 package network.cere.ddc.core.signature
 
-import org.assertj.core.api.Assertions.assertThat
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 internal class EthereumTest {
@@ -19,7 +21,7 @@ internal class EthereumTest {
         val result = testSubject.verify(message.toByteArray(), signature)
 
         //then
-        assertThat(result).isTrue
+        result.shouldBeTrue()
     }
 
     @Test
@@ -31,7 +33,7 @@ internal class EthereumTest {
         val result = testSubject.verify(message.toByteArray(), signature)
 
         //then
-        assertThat(result).isFalse
+        result.shouldBeFalse()
     }
 
     @Test
@@ -43,6 +45,6 @@ internal class EthereumTest {
         val result = testSubject.sign(message.toByteArray())
 
         //then
-        assertThat(result).isEqualTo(signature)
+        result shouldBe signature
     }
 }

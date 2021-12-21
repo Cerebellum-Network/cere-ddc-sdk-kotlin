@@ -1,9 +1,9 @@
 package network.cere.ddc.nft
 
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.nft.client.TransportClient
 import network.cere.ddc.nft.model.NftPath
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -30,7 +30,7 @@ internal class NftStorageTest {
             val result = testSubject.storeAsset(nftId, data, fileName)
 
             //then
-            Assertions.assertThat(result).isEqualTo(NftPath(url))
+            result shouldBe NftPath(url)
             verify(client).storeAsset(nftId, data, fileName)
         }
     }
@@ -50,7 +50,7 @@ internal class NftStorageTest {
             val result = testSubject.readAsset(nftId, NftPath(url))
 
             //then
-            Assertions.assertThat(result).isEqualTo(data)
+            result shouldBe data
             verify(client).readAsset(nftId, NftPath(url))
         }
     }

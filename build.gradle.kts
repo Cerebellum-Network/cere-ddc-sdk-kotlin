@@ -50,7 +50,7 @@ subprojects {
             "testImplementation"("org.junit.jupiter:junit-jupiter-api:${Versions.junit}")
             "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:${Versions.junit}")
             "testImplementation"("org.junit.jupiter:junit-jupiter-params:${Versions.junit}")
-            "testImplementation"("org.assertj:assertj-core:${Versions.assertj}")
+            "testImplementation"("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
             "testImplementation"("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
             "testImplementation"("com.github.tomakehurst:wiremock:${Versions.wiremock}")
         }

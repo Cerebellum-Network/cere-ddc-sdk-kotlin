@@ -19,6 +19,7 @@ import network.cere.ddc.nft.model.NftPath
 import network.cere.ddc.nft.model.metadata.Metadata
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
 
 class HttpTransportClient(
     private val scheme: Scheme,
@@ -188,5 +189,5 @@ class HttpTransportClient(
         return path[3]
     }
 
-    private fun nextNode() = config.trustedNodes[nodeFlag.getAndIncrement() % config.trustedNodes.size]
+    private fun nextNode() = config.trustedNodes[abs(nodeFlag.getAndIncrement()) % config.trustedNodes.size]
 }

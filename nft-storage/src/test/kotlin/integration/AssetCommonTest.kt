@@ -1,12 +1,12 @@
 package integration
 
+import io.kotest.matchers.shouldBe
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.Config
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.NftStorageAsync
 import network.cere.ddc.nft.client.HttpTransportClient
-import org.assertj.core.api.AssertionsForInterfaceTypes.assertThat
 import org.junit.jupiter.api.Test
 
 class AssetCommonTest {
@@ -31,7 +31,7 @@ class AssetCommonTest {
         val result = testSubject.storeAsset(nftId, asset, name)
 
         //then
-        assertThat(result.url).matches("cns:///.*/$name")
+        result.url matches "cns:///.*/$name".toRegex()
     }
 
     @Test
@@ -44,7 +44,7 @@ class AssetCommonTest {
         val result = testSubject.readAsset(nftId, nftPath)
 
         //then
-        assertThat(result).isEqualTo(asset)
+        result shouldBe asset
     }
 
     @Test
@@ -73,7 +73,7 @@ class AssetCommonTest {
 
         //then
         resultDirectly.forEach {
-            assertThat(it.join()).isEqualTo(asset)
+            it.join() shouldBe asset
         }
     }
 }

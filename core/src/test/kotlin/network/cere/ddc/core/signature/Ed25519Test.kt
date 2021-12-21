@@ -1,6 +1,8 @@
 package network.cere.ddc.core.signature
 
-import org.assertj.core.api.Assertions
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 internal class Ed25519Test {
@@ -19,7 +21,7 @@ internal class Ed25519Test {
         val result = testSubject.verify(message.toByteArray(), signature)
 
         //then
-        Assertions.assertThat(result).isTrue
+        result.shouldBeTrue()
     }
 
     @Test
@@ -31,7 +33,7 @@ internal class Ed25519Test {
         val result = testSubject.verify(message.toByteArray(), signature)
 
         //then
-        Assertions.assertThat(result).isFalse
+        result.shouldBeFalse()
     }
 
     @Test
@@ -43,6 +45,6 @@ internal class Ed25519Test {
         val result = testSubject.sign(message.toByteArray())
 
         //then
-        Assertions.assertThat(result).isEqualTo(signature)
+        result shouldBe signature
     }
 }
