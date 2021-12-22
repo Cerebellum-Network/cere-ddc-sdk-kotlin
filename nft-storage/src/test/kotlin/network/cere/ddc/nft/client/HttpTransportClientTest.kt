@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.extension.sha256
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.nft.Config
+import network.cere.ddc.nft.NftStorageConfig
 import network.cere.ddc.nft.model.NftPath
 import org.junit.jupiter.api.*
 import org.mockito.Mockito
@@ -50,7 +50,7 @@ internal class HttpTransportClientTest {
         testSubject =
             HttpTransportClient(
                 scheme,
-                Config(listOf(Node(address = "http://localhost:${server.port()}", id = nodeId)))
+                NftStorageConfig(listOf(Node(address = "http://localhost:${server.port()}", id = nodeId)))
             )
     }
 
