@@ -30,7 +30,6 @@ subprojects {
 
             // HTTP
             "implementation"("io.ktor:ktor-client-core:${Versions.ktor}")
-            "implementation"("io.ktor:ktor-client-java:${Versions.ktor}")
 
             // Logging
             "implementation"("org.slf4j:slf4j-api:${Versions.slf4j}")

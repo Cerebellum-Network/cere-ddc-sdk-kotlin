@@ -57,7 +57,9 @@ class HttpTransportClient(
                 connectTimeoutMillis = config.connectTimeout.toMillis()
             }
 
-            install(JsonFeature)
+            install(JsonFeature) {
+                this.serializer = JacksonSerializer()
+            }
 
             install(HttpSecurity) {
                 expiresAfter = config.requestExpiration
@@ -133,7 +135,6 @@ class HttpTransportClient(
         try {
             val bytes = readData("$BASIC_NFT_URL/metadata/%s/$publicKeyHex", nftId, metadataNftPath)
 
-            @Suppress("BlockingMethodInNonBlockingContext")
             return objectMapper.readValue<EdekRequest>(bytes).edek
         } catch (e: Exception) {
             throw EdekReadNftException("Couldn't read edek", e)
@@ -159,7 +160,7 @@ class HttpTransportClient(
                 redirectToNodes(nftId, cid, redirectNodes)
             }
             else -> {
-                throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
+                throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${String(response.readBytes())}'")
             }
         }
     }
@@ -184,7 +185,7 @@ class HttpTransportClient(
         }
 
         if (HttpStatusCode.Created != response.status) {
-            throw NftException("Invalid response status for node=$node. Response: status='${response.status}' body='${response.receive<String>()}'")
+            throw NftException("Invalid response status for node=$node. Response: status='${response.status}' body='${String(response.readBytes())}'")
         }
 
         return response.receive()
@@ -198,7 +199,7 @@ class HttpTransportClient(
                 return response.readBytes()
             }
 
-            logger.warn("Couldn't get data from redirected node=$node. Response: status='${response.status}' body='${response.receive<String>()}'")
+            logger.warn("Couldn't get data from redirected node=$node. Response: status='${response.status}' body='${String(response.readBytes())}'")
         }
 
         throw NftException("Couldn't get asset from nodes: $redirectNodeAddresses")
