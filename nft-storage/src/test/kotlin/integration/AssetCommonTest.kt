@@ -32,7 +32,7 @@ class AssetCommonTest {
             val result = testSubject.storeAsset(nftId, asset, name)
 
             //then
-            result.url matches "cns:///.*/$name".toRegex()
+            result.url!! matches "cns:///.*/$name".toRegex()
         }
     }
 

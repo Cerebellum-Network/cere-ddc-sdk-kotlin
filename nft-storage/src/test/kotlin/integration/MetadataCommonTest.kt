@@ -36,7 +36,7 @@ class MetadataCommonTest {
             val result = testSubject.storeMetadata(nftId, metadata)
 
             //then
-            result.url matches "cns:///.*/metadata.json".toRegex()
+            result.url!! matches "cns:///.*/metadata.json".toRegex()
         }
     }
 

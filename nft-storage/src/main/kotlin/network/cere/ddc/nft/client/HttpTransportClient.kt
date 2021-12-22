@@ -206,7 +206,7 @@ class HttpTransportClient(
     }
 
     private fun parseCid(nftPath: NftPath): String {
-        val path = nftPath.url.split("/")
+        val path = nftPath.url!!.split("/")
 
         if (path.size != 5 || path[3].trim().isEmpty()) {
             throw IllegalArgumentException("Invalid nft path url")

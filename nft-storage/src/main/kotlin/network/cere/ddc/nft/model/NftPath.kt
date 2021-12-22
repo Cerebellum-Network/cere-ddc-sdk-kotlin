@@ -1,3 +1,8 @@
 package network.cere.ddc.nft.model
 
-data class NftPath(val url: String)
+import com.fasterxml.jackson.annotation.JsonProperty
+
+data class NftPath(
+    @field: JsonProperty("url")
+    val url: String? = null
+)

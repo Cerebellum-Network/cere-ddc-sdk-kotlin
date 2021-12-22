@@ -1,6 +1,10 @@
 package network.cere.ddc.nft.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class Edek(
-    val publicKey: String,
-    val value: String
+    @field: JsonProperty("publicKey")
+    val publicKey: String? = null,
+    @field: JsonProperty("value")
+    val value: String? = null
 )
