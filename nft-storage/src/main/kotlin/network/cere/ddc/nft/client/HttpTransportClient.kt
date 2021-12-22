@@ -13,7 +13,7 @@ import network.cere.ddc.core.http.HttpSecurity
 import network.cere.ddc.core.http.defaultHttpClient
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.nft.Config
+import network.cere.ddc.nft.NftStorageConfig
 import network.cere.ddc.nft.exception.*
 import network.cere.ddc.nft.model.NftPath
 import network.cere.ddc.nft.model.metadata.Metadata
@@ -23,7 +23,7 @@ import kotlin.math.abs
 
 class HttpTransportClient(
     private val scheme: Scheme,
-    private val config: Config,
+    private val config: NftStorageConfig,
     httpClient: HttpClient = defaultHttpClient(),
 ) : TransportClient {
 
