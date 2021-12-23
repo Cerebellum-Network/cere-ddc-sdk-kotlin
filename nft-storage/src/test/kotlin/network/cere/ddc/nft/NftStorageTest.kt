@@ -43,16 +43,17 @@ internal class NftStorageTest {
             //given
             val data = "testData".toByteArray()
             val fileName = "testFileName.mp4"
-            val url = "cns://routing-key/cid/$fileName"
+            val cid = "cid"
+            val url = "cns://routing-key/$cid/$fileName"
 
-            whenever(client.readAsset(nftId, NftPath(url))).thenReturn(data)
+            whenever(client.readAsset(nftId, cid)).thenReturn(data)
 
             //when
             val result = testSubject.readAsset(nftId, NftPath(url))
 
             //then
             result shouldBe data
-            verify(client).readAsset(nftId, NftPath(url))
+            verify(client).readAsset(nftId, cid)
         }
     }
 
@@ -78,16 +79,17 @@ internal class NftStorageTest {
         runBlocking {
             //given
             val metadata = Erc721Metadata(name = "someName", description = "someDescription", image = "someImage")
-            val url = "cns://routing-key/cid/metadata.json"
+            val cid = "cid"
+            val url = "cns://routing-key/$cid/metadata.json"
 
-            whenever(client.readMetadata(nftId, NftPath(url))).thenReturn(metadata)
+            whenever(client.readMetadata(nftId, cid)).thenReturn(metadata)
 
             //when
             val result = testSubject.readMetadata(nftId, NftPath(url))
 
             //then
             result shouldBe metadata
-            verify(client).readMetadata(nftId, NftPath(url))
+            verify(client).readMetadata(nftId, cid)
         }
     }
 }

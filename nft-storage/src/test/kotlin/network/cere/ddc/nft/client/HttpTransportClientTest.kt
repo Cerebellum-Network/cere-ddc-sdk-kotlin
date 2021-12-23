@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.extension.sha256
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.nft.NftConnectionConfig
+import network.cere.ddc.nft.config.TransportClientConfig
 import network.cere.ddc.nft.model.NftPath
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -39,6 +39,7 @@ internal class HttpTransportClientTest {
             val data = "testStoreAsset"
             var requestCaptor: HttpRequestData? = null
             val testSubject = createHttpTransportClient { request ->
+                request.body.toByteArray()
                 requestCaptor = request
                 respond(
                     content = """{ "url":"cns://routing-key/cid/$fileName" }""",
@@ -70,7 +71,6 @@ internal class HttpTransportClientTest {
         runBlocking {
             //given
             val data = "testStoreAsset"
-            val path = NftPath("cns://routing-key/someCid/shadow.jar")
             var requestCaptor: HttpRequestData? = null
             val testSubject = createHttpTransportClient { request ->
                 requestCaptor = request
@@ -78,7 +78,7 @@ internal class HttpTransportClientTest {
             }
 
             //when
-            val result = testSubject.readAsset(nftId, path)
+            val result = testSubject.readAsset(nftId, "someCid")
 
             //then
             result shouldBe data.toByteArray()
@@ -93,7 +93,6 @@ internal class HttpTransportClientTest {
         runBlocking {
             //given
             val data = "testStoreAsset"
-            val path = NftPath("cns://routing-key/someCid/shadow.jar")
             val redirect = """[{"id":"$nodeId", "address":"http://localhost:8888"}]"""
 
             var requestCaptorRedirect: HttpRequestData? = null
@@ -113,7 +112,7 @@ internal class HttpTransportClientTest {
             }
 
             //when
-            val result = testSubject.readAsset(nftId, path)
+            val result = testSubject.readAsset(nftId, "someCid")
 
             //then
             result shouldBe data.toByteArray()
@@ -132,7 +131,7 @@ internal class HttpTransportClientTest {
     private fun createHttpTransportClient(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpTransportClient {
         return HttpTransportClient(
             scheme,
-            NftConnectionConfig(listOf(Node(address = "http://localhost:8080", id = nodeId))),
+            TransportClientConfig(listOf(Node(address = "http://localhost:8080", id = nodeId))),
             HttpClient(MockEngine(handler))
         )
     }

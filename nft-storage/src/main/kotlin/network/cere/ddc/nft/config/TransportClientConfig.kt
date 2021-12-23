@@ -1,9 +1,9 @@
-package network.cere.ddc.nft
+package network.cere.ddc.nft.config
 
 import network.cere.ddc.core.model.Node
 import java.time.Duration
 
-data class NftConnectionConfig(
+data class TransportClientConfig(
     val trustedNodes: List<Node>,
     val retryTimes: Int = 3,
     val retryBackOff: Duration = Duration.ofMillis(200),

@@ -8,60 +8,62 @@ import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
 import network.cere.ddc.nft.config.TransportClientConfig
-import network.cere.ddc.nft.model.metadata.Erc1155Metadata
+import network.cere.ddc.nft.model.Edek
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-class MetadataCommonTest {
+class EdekCommonTest {
 
     private val nftId = "MetadataNftId"
     private val privateKey = "fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19"
 
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val connectionConfig = TransportClientConfig(
-            listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
+        listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
     )
     private val client = HttpTransportClient(scheme, connectionConfig)
     private val testSubject = NftStorage(client)
 
     @Test
-    fun `Store metadata`() {
+    fun `Store edek`() {
         runBlocking {
             //given
-            val metadata =
-                Erc721Metadata(name = "testName", description = "testDescription", image = "http://image-site.com")
-
-            //when
-            val result = testSubject.storeMetadata(nftId, metadata)
-
-            //then
-            result.url!! matches "cns:///.*/metadata.json".toRegex()
-        }
-    }
-
-    @Test
-    fun `Read metadata`() {
-        runBlocking {
-            //given
-            val metadata = Erc1155Metadata(
-                name = "testName",
-                description = "testDescription",
-                image = "http://image-site.com",
-                decimals = 10
+            val nftPath = testSubject.storeMetadata(
+                nftId,
+                Erc721Metadata(name = "EdekCommonTest1", description = "testDescription", image = "http://image-site.com")
             )
-            val nftPath = testSubject.storeMetadata(nftId, metadata)
+            val cid = nftPath.url!!.split("/")[3].trim()
+            val edek = Edek(scheme.publicKeyHex, "1234567890", "wrongCid")
 
             //when
-            val result = testSubject.readMetadata(nftId, nftPath)
+            val result = testSubject.storeEdek(nftId, nftPath, edek)
 
             //then
-            result shouldBe metadata
+            result shouldBe edek.copy(metadataCid = cid)
         }
     }
 
     @Test
-    fun `Read metadata redirect`() {
+    fun `Read edek`() {
+        runBlocking {
+            //given
+            val nftPath = testSubject.storeMetadata(
+                nftId,
+                Erc721Metadata(name = "EdekCommonTest2", description = "testDescription", image = "http://image-site.com")
+            )
+            val edek = testSubject.storeEdek(nftId, nftPath, Edek(scheme.publicKeyHex, "1234567890"))
+
+            //when
+            val result = testSubject.readEdek(nftId, nftPath, scheme.publicKeyHex)
+
+            //then
+            result shouldBe edek
+        }
+    }
+
+    @Test
+    fun `Read edek redirect`() {
         runBlocking {
             //given
             val nodes = listOf(
@@ -70,13 +72,12 @@ class MetadataCommonTest {
                 Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
                 Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
             )
-            val metadata = Erc1155Metadata(
-                name = "testName",
-                description = "testDescription",
-                image = "http://image-site.com",
-                decimals = 10
+            val nftPath = testSubject.storeMetadata(
+                nftId,
+                Erc721Metadata(name = "EdekCommonTest3", description = "testDescription", image = "http://image-site.com")
             )
-            val nftPath = testSubject.storeMetadata(nftId, metadata)
+            val edek = testSubject.storeEdek(nftId, nftPath, Edek(scheme.publicKeyHex, "1234567890"))
+
 
             //wait until routing table update state for new asset
             delay(Duration.ofSeconds(3))
@@ -84,12 +85,12 @@ class MetadataCommonTest {
             //when
             val resultDirectly = nodes.map {
                 val client = NftStorage(HttpTransportClient(scheme, TransportClientConfig(listOf(it))))
-                client.readMetadata(nftId, nftPath)
+                client.readEdek(nftId, nftPath, scheme.publicKeyHex)
             }
 
             //then
             resultDirectly.forEach {
-                it shouldBe metadata
+                it shouldBe edek
             }
         }
     }
