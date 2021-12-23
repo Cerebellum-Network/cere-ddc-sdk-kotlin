@@ -42,7 +42,7 @@ subprojects {
             "testImplementation"("org.junit.jupiter:junit-jupiter-params:${Versions.junit}")
             "testImplementation"("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
             "testImplementation"("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
-            "testImplementation"("com.github.tomakehurst:wiremock:${Versions.wiremock}")
+            "testImplementation"("io.ktor:ktor-client-mock:${Versions.ktor}")
         }
     }
 
