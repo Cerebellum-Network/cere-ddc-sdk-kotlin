@@ -1,7 +1,5 @@
 package network.cere.ddc.nft
 
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.nft.client.TransportClient
@@ -79,7 +77,7 @@ internal class NftStorageTest {
     fun `Read metadata`() {
         runBlocking {
             //given
-            val metadata = jacksonObjectMapper().valueToTree<ObjectNode>(Erc721Metadata(name = "someName", description = "someDescription", image = "someImage"))
+            val metadata = Erc721Metadata(name = "someName", description = "someDescription", image = "someImage")
             val url = "cns://routing-key/cid/metadata.json"
 
             whenever(client.readMetadata(nftId, NftPath(url))).thenReturn(metadata)

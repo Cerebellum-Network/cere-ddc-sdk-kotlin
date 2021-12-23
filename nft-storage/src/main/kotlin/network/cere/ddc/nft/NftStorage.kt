@@ -1,6 +1,5 @@
 package network.cere.ddc.nft
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import network.cere.ddc.nft.client.TransportClient
 import network.cere.ddc.nft.model.NftPath
 import network.cere.ddc.nft.model.metadata.Metadata
@@ -13,5 +12,5 @@ class NftStorage(private val client: TransportClient) {
 
     suspend fun storeMetadata(nftId: String, metadata: Metadata): NftPath = client.storeMetadata(nftId, metadata)
 
-    suspend fun readMetadata(nftId: String, nftPath: NftPath): ObjectNode = client.readMetadata(nftId, nftPath)
+    suspend fun readMetadata(nftId: String, nftPath: NftPath): Metadata = client.readMetadata(nftId, nftPath)
 }

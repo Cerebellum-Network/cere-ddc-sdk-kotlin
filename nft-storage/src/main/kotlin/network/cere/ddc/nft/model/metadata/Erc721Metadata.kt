@@ -11,6 +11,11 @@ data class Erc721Metadata(
     @field: JsonProperty("image")
     val image: String? = null,
 ) : Metadata {
+
+    companion object {
+        const val SCHEMA_NAME = "ERC-721"
+    }
+
     @JsonIgnore
-    override val schema = "ERC-721"
+    override val schema = SCHEMA_NAME
 }
