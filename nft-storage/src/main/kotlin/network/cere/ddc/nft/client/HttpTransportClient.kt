@@ -136,7 +136,7 @@ class HttpTransportClient(
                 val bytes = readData("$BASIC_NFT_URL/metadata/%s", nftId, nftPath) {
                     schemaName = requireNotNull(it.headers[METADATA_SCHEMA_NAME_HEADER]) {
                         "Schema name header $METADATA_SCHEMA_NAME_HEADER is absent"
-                    }
+                    }.lowercase()
                 }
 
                 return requireNotNull(schemas[schemaName]) { "Unsupported metadata schema name: $schemaName" }.let {
@@ -194,7 +194,7 @@ class HttpTransportClient(
                 HttpStatusCode.MultipleChoices -> {
                     val redirectNodes: List<Node> = response.receive()
                     redirectNodes.forEach { nodeAddresses[it.address] = it.id }
-                    redirectToNodes(nftId, cid, redirectNodes)
+                    redirectToNodes(path, nftId, cid, redirectNodes)
                 }
                 else -> {
                     throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
@@ -228,11 +228,12 @@ class HttpTransportClient(
         return response.receive()
     }
 
-    private suspend fun redirectToNodes(nftId: String, cid: String, redirectNodeAddresses: List<Node>): HttpResponse {
+    private suspend fun redirectToNodes(path: String, nftId: String, cid: String, redirectNodeAddresses: List<Node>): HttpResponse {
         redirectNodeAddresses.forEach { node ->
-            val response = client.get<HttpResponse>(String.format("$BASIC_NFT_URL/assets/%s", node.address, nftId, cid))
+            val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
 
             if (response.status == HttpStatusCode.OK) {
+                println(response.headers)
                 return response
             }
 

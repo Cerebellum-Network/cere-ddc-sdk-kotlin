@@ -10,7 +10,4 @@ dependencies {
     implementation("com.github.komputing.kethereum:crypto_impl_bouncycastle:${Versions.kethereum}")
     implementation("com.github.komputing.kethereum:extensions_kotlin:${Versions.kethereum}")
     implementation("com.github.komputing.kethereum:keccak_shortcut:${Versions.kethereum}")
-
-    // HTTP
-    "implementation"("io.ktor:ktor-client-java:${Versions.ktor}")
 }

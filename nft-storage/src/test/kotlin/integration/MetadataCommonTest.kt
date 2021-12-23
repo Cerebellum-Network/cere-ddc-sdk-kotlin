@@ -1,6 +1,5 @@
 package integration
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
@@ -11,11 +10,9 @@ import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
 import network.cere.ddc.nft.model.metadata.Erc1155Metadata
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-@Disabled
 class MetadataCommonTest {
 
     private val nftId = "MetadataNftId"
@@ -59,7 +56,7 @@ class MetadataCommonTest {
             val result = testSubject.readMetadata(nftId, nftPath)
 
             //then
-            result shouldBe jacksonObjectMapper().valueToTree(metadata)
+            result shouldBe metadata
         }
     }
 
@@ -94,7 +91,7 @@ class MetadataCommonTest {
 
             //then
             resultDirectly.forEach {
-                it shouldBe jacksonObjectMapper().valueToTree(metadata)
+                it shouldBe metadata
             }
         }
     }

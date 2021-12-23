@@ -1,6 +1,7 @@
 package network.cere.ddc.nft.model.metadata
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class Erc1155Metadata(
@@ -12,7 +13,7 @@ data class Erc1155Metadata(
     val image: String? = null,
     @field: JsonProperty("decimals")
     val decimals: Int? = null,
-    @field: JsonProperty("properties")
+    @field: [JsonProperty("properties") JsonInclude(JsonInclude.Include.NON_NULL)]
     val properties: Map<String, Any>? = null
 ) : Metadata {
 
