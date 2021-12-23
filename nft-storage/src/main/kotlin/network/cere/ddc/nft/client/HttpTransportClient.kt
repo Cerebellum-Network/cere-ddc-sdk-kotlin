@@ -1,6 +1,6 @@
 package network.cere.ddc.nft.client
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -118,7 +118,7 @@ class HttpTransportClient(
         }
     }
 
-    override suspend fun readMetadata(nftId: String, nftPath: NftPath): JsonNode {
+    override suspend fun readMetadata(nftId: String, nftPath: NftPath): ObjectNode {
         try {
             return retry(
                 config.retryTimes,
@@ -128,7 +128,7 @@ class HttpTransportClient(
                 val bytes = readData("$BASIC_NFT_URL/metadata/%s", nftId, nftPath)
 
                 @Suppress("BlockingMethodInNonBlockingContext")
-                return objectMapper.readTree(bytes)
+                return objectMapper.readValue(bytes, ObjectNode::class.java)
             }
         } catch (e: Exception) {
             throw MetadataReadNftException("Couldn't read metadata", e)
