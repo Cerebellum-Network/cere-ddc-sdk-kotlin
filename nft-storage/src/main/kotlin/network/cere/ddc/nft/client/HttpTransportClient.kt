@@ -1,5 +1,6 @@
 package network.cere.ddc.nft.client
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.*
@@ -9,12 +10,13 @@ import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.extension.sha256
 import network.cere.ddc.core.http.HttpSecurity
 import network.cere.ddc.core.http.defaultHttpClient
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.nft.NftStorageConfig
+import network.cere.ddc.nft.NftConnectionConfig
 import network.cere.ddc.nft.exception.*
 import network.cere.ddc.nft.model.Edek
 import network.cere.ddc.nft.model.EdekRequest
@@ -26,7 +28,7 @@ import kotlin.math.abs
 
 class HttpTransportClient(
     private val scheme: Scheme,
-    private val config: NftStorageConfig,
+    private val config: NftConnectionConfig,
     httpClient: HttpClient = defaultHttpClient(),
 ) : TransportClient {
 
@@ -74,20 +76,27 @@ class HttpTransportClient(
 
     override suspend fun storeAsset(nftId: String, data: ByteArray, name: String): NftPath {
         try {
-            return storeData("$BASIC_NFT_URL/assets", nftId, data) {
-                headers {
-                    set(CONTENT_PATH_HEADER, name)
+            return retry(
+                config.retryTimes,
+                config.retryBackOff,
+                predicateRetry("Couldn't store asset to Nft Storage")
+            ) {
+                storeData("$BASIC_NFT_URL/assets", nftId, data) {
+                    headers {
+                        set(CONTENT_PATH_HEADER, name)
+                    }
                 }
             }
         } catch (e: Exception) {
             throw AssetSaveNftException("Couldn't store asset", e)
         }
-
     }
 
     override suspend fun readAsset(nftId: String, nftPath: NftPath): ByteArray {
         try {
-            return readData("$BASIC_NFT_URL/assets/%s", nftId, nftPath)
+            return retry(config.retryTimes, config.retryBackOff, predicateRetry("Couldn't read asset in Nft Storage")) {
+                readData("$BASIC_NFT_URL/assets/%s", nftId, nftPath)
+            }
         } catch (e: Exception) {
             throw AssetReadNftException("Couldn't read asset", e)
         }
@@ -98,9 +107,15 @@ class HttpTransportClient(
             @Suppress("BlockingMethodInNonBlockingContext")
             val data = objectMapper.writeValueAsBytes(metadata)
 
-            return storeData("$BASIC_NFT_URL/metadata", nftId, data) {
-                headers {
-                    set(NFT_STANDARD_HEADER, metadata.schema)
+            return retry(
+                config.retryTimes,
+                config.retryBackOff,
+                predicateRetry("Couldn't store metadata to Nft Storage")
+            ) {
+                storeData("$BASIC_NFT_URL/metadata", nftId, data) {
+                    headers {
+                        set(NFT_STANDARD_HEADER, metadata.schema)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -108,12 +123,18 @@ class HttpTransportClient(
         }
     }
 
-    override suspend fun <T : Metadata> readMetadata(nftId: String, nftPath: NftPath, schema: Class<T>): T {
+    override suspend fun readMetadata(nftId: String, nftPath: NftPath): ObjectNode {
         try {
-            val bytes = readData("$BASIC_NFT_URL/metadata/%s", nftId, nftPath)
+            return retry(
+                config.retryTimes,
+                config.retryBackOff,
+                predicateRetry("Couldn't store metadata to Nft Storage")
+            ) {
+                val bytes = readData("$BASIC_NFT_URL/metadata/%s", nftId, nftPath)
 
-            @Suppress("BlockingMethodInNonBlockingContext")
-            return objectMapper.readValue(bytes, schema)
+                @Suppress("BlockingMethodInNonBlockingContext")
+                return objectMapper.readValue(bytes, ObjectNode::class.java)
+            }
         } catch (e: Exception) {
             throw MetadataReadNftException("Couldn't read metadata", e)
         }
@@ -122,6 +143,7 @@ class HttpTransportClient(
     override suspend fun storeEdek(nftId: String, metadataNftPath: NftPath, edek: Edek) {
         try {
             val cid = parseCid(metadataNftPath)
+
             @Suppress("BlockingMethodInNonBlockingContext")
             val data = objectMapper.writeValueAsBytes(EdekRequest(cid, edek))
 
@@ -145,34 +167,33 @@ class HttpTransportClient(
         client.close()
     }
 
-    private suspend fun readData(path: String, nftId: String, nftPath: NftPath): ByteArray {
-        val node = nextNode()
-        val cid = parseCid(nftPath)
-        val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
+    private suspend fun readData(path: String, nftId: String, nftPath: NftPath): ByteArray =
+        retry(times = config.retryTimes, backOff = config.retryBackOff, { it is NftException }) {
+            val node = getNode()
+            val cid = parseCid(nftPath)
+            val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
 
-        return when (response.status) {
-            HttpStatusCode.OK -> {
-                response.readBytes()
-            }
-            HttpStatusCode.MultipleChoices -> {
-                val redirectNodes: List<Node> = response.receive()
-                redirectNodes.forEach { nodeAddresses[it.address] = it.id }
-                redirectToNodes(nftId, cid, redirectNodes)
-            }
-            else -> {
-                throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${String(response.readBytes())}'")
+            return when (response.status) {
+                HttpStatusCode.OK -> {
+                    response.readBytes()
+                }
+                HttpStatusCode.MultipleChoices -> {
+                    val redirectNodes: List<Node> = response.receive()
+                    redirectNodes.forEach { nodeAddresses[it.address] = it.id }
+                    redirectToNodes(nftId, cid, redirectNodes)
+                }
+                else -> {
+                    throw NftException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
+                }
             }
         }
-    }
+
 
     private suspend inline fun storeData(
-        path: String,
-        nftId: String,
-        data: ByteArray,
-        block: HttpRequestBuilder.() -> Unit = {}
-    ): NftPath {
+        path: String, nftId: String, data: ByteArray, block: HttpRequestBuilder.() -> Unit = {}
+    ): NftPath = retry(times = config.retryTimes, backOff = config.retryBackOff, { it is NftException }) {
         val hash = data.sha256()
-        val node = nextNode()
+        val node = getNode()
         val response = client.request<HttpResponse>(String.format(path, node.address, nftId)) {
             method = HttpMethod.Put
             body = data
@@ -185,7 +206,9 @@ class HttpTransportClient(
         }
 
         if (HttpStatusCode.Created != response.status) {
-            throw NftException("Invalid response status for node=$node. Response: status='${response.status}' body='${String(response.readBytes())}'")
+            throw NftException(
+                "Invalid response status for node=$node. Response: status='${response.status}' body='${response.receive<String>()}'"
+            )
         }
 
         return response.receive()
@@ -199,7 +222,12 @@ class HttpTransportClient(
                 return response.readBytes()
             }
 
-            logger.warn("Couldn't get data from redirected node=$node. Response: status='${response.status}' body='${String(response.readBytes())}'")
+            logger.warn(
+                "Couldn't get data from redirected node={}. Response: status='{}' body='{}'",
+                node,
+                response.status,
+                response.receive<String>()
+            )
         }
 
         throw NftException("Couldn't get asset from nodes: $redirectNodeAddresses")
@@ -215,5 +243,15 @@ class HttpTransportClient(
         return path[3]
     }
 
-    private fun nextNode() = config.trustedNodes[abs(nodeFlag.getAndIncrement()) % config.trustedNodes.size]
+    private fun getNode() = config.trustedNodes[abs(nodeFlag.get()) % config.trustedNodes.size]
+
+    private fun predicateRetry(message: String): (Exception) -> Boolean = {
+        logger.warn("{}. Exception message: {}", message, it.message)
+        if (it is NftException) {
+            nodeFlag.incrementAndGet()
+            true
+        } else {
+            false
+        }
+    }
 }
