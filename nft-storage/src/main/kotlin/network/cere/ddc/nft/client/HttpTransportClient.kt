@@ -162,10 +162,7 @@ class HttpTransportClient(
 
 
     private suspend inline fun storeData(
-        path: String,
-        nftId: String,
-        data: ByteArray,
-        block: HttpRequestBuilder.() -> Unit
+        path: String, nftId: String, data: ByteArray, block: HttpRequestBuilder.() -> Unit
     ): NftPath = retry(times = config.retryTimes, backOff = config.retryBackOff, { it is NftException }) {
         val hash = data.sha256()
         val node = getNode()
@@ -217,6 +214,7 @@ class HttpTransportClient(
     }
 
     private fun getNode() = config.trustedNodes[abs(nodeFlag.get()) % config.trustedNodes.size]
+
     private fun predicateRetry(message: String): (Exception) -> Boolean = {
         logger.warn("{}. Exception message: {}", message, it.message)
         if (it is NftException) {
