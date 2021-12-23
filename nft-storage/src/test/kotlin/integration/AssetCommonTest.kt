@@ -2,12 +2,14 @@ package integration
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.time.delay
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.NftStorageConfig
 import network.cere.ddc.nft.client.HttpTransportClient
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 class AssetCommonTest {
 
@@ -68,7 +70,7 @@ class AssetCommonTest {
             val nftPath = testSubject.storeAsset(nftId, asset, name)
 
             //wait until routing table update state for new asset
-            Thread.sleep(3000)
+            delay(Duration.ofSeconds(3))
 
             //when
             val resultDirectly = nodes.map {
