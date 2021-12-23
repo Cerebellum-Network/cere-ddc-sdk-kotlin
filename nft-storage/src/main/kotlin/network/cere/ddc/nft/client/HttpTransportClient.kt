@@ -95,6 +95,7 @@ class HttpTransportClient(
         }
 
         return requireNotNull(schemas[schemaName]) { "Unsupported metadata schema name: $schemaName" }.let {
+            @Suppress("BlockingMethodInNonBlockingContext")
             objectMapper.readValue(bytes, it.java)
         }
     }
