@@ -1,6 +1,6 @@
 object Versions {
-    val kotlin = "1.5.31"
-    val ktor = "1.6.3"
+    val kotlin = "1.6.10"
+    val ktor = "1.6.5"
     val junit = "5.8.2"
     val kethereum = "0.85.3"
     val kotest = "5.0.1"
@@ -10,4 +10,5 @@ object Versions {
     val wiremock = "2.27.2"
     val slf4j = "1.7.30"
     val docker = "0.14.3"
+    val schnorrkel = "v1.0.4"
 }

@@ -53,7 +53,7 @@ class MetadataCommonTest {
             val nftPath = testSubject.storeMetadata(nftId, metadata)
 
             //when
-            val result = testSubject.readMetadata(nftId, nftPath, Erc1155Metadata::class.java)
+            val result = testSubject.readMetadata(nftId, nftPath)
 
             //then
             result shouldBe metadata
@@ -86,7 +86,7 @@ class MetadataCommonTest {
             //when
             val resultDirectly = nodes.map {
                 val client = NftStorage(HttpTransportClient(scheme, NftStorageConfig(listOf(it))))
-                client.readMetadata(nftId, nftPath, Erc1155Metadata::class.java)
+                client.readMetadata(nftId, nftPath)
             }
 
             //then

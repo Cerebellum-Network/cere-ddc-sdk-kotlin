@@ -1,15 +1,20 @@
 package network.cere.ddc.nft
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.nft.client.TransportClient
 import network.cere.ddc.nft.model.NftPath
+import network.cere.ddc.nft.model.metadata.Erc721Metadata
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 internal class NftStorageTest {
+
+    private val nftId = "testNftId"
 
     private val client: TransportClient = mock {}
 
@@ -19,7 +24,6 @@ internal class NftStorageTest {
     fun `Store asset`() {
         runBlocking {
             //given
-            val nftId = "testNftId"
             val data = "testData".toByteArray()
             val fileName = "testFileName.mp4"
             val url = "cns://routing-key/cid/$fileName"
@@ -39,7 +43,6 @@ internal class NftStorageTest {
     fun `Read asset`() {
         runBlocking {
             //given
-            val nftId = "testNftId"
             val data = "testData".toByteArray()
             val fileName = "testFileName.mp4"
             val url = "cns://routing-key/cid/$fileName"
@@ -52,6 +55,41 @@ internal class NftStorageTest {
             //then
             result shouldBe data
             verify(client).readAsset(nftId, NftPath(url))
+        }
+    }
+
+    @Test
+    fun `Store metadata`() {
+        runBlocking {
+            //given
+            val url = "cns://routing-key/cid/metadata.json"
+            val metadata = Erc721Metadata(name = "someName", description = "someDescription", image = "someImage")
+            whenever(client.storeMetadata(nftId, metadata)).thenReturn(NftPath(url))
+
+            //when
+            val result = testSubject.storeMetadata(nftId, metadata)
+
+            //then
+            result shouldBe NftPath(url)
+            verify(client).storeMetadata(nftId, metadata)
+        }
+    }
+
+    @Test
+    fun `Read metadata`() {
+        runBlocking {
+            //given
+            val metadata = jacksonObjectMapper().valueToTree<JsonNode>(Erc721Metadata(name = "someName", description = "someDescription", image = "someImage"))
+            val url = "cns://routing-key/cid/metadata.json"
+
+            whenever(client.readMetadata(nftId, NftPath(url))).thenReturn(metadata)
+
+            //when
+            val result = testSubject.readMetadata(nftId, NftPath(url))
+
+            //then
+            result shouldBe metadata
+            verify(client).readMetadata(nftId, NftPath(url))
         }
     }
 }
