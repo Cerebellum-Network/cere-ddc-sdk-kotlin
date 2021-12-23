@@ -5,8 +5,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.nft.NftConnectionConfig
 import network.cere.ddc.nft.NftStorage
-import network.cere.ddc.nft.NftStorageConfig
 import network.cere.ddc.nft.client.HttpTransportClient
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -17,7 +17,7 @@ class AssetCommonTest {
     private val privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
 
     private val scheme = Scheme.create(Scheme.ED_25519, privateKey)
-    private val config = NftStorageConfig(
+    private val config = NftConnectionConfig(
         listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
     )
     private val client = HttpTransportClient(scheme, config)
@@ -63,7 +63,7 @@ class AssetCommonTest {
                 Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
                 Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
             )
-            val testSubject = NftStorage(HttpTransportClient(scheme, NftStorageConfig(nodes)))
+            val testSubject = NftStorage(HttpTransportClient(scheme, NftConnectionConfig(nodes)))
 
             val asset = "Asset for storing with redirect".toByteArray()
             val name = "someAsset.jpeg"
@@ -74,7 +74,7 @@ class AssetCommonTest {
 
             //when
             val resultDirectly = nodes.map {
-                val client = NftStorage(HttpTransportClient(scheme, NftStorageConfig(listOf(it))))
+                val client = NftStorage(HttpTransportClient(scheme, NftConnectionConfig(listOf(it))))
                 client.readAsset(nftId, nftPath)
             }
 
