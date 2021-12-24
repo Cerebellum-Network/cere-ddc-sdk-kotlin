@@ -7,22 +7,20 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
-import network.cere.ddc.nft.config.TransportClientConfig
 import network.cere.ddc.nft.model.Edek
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-class EdekCommonTest {
+internal class EdekCommonTest {
 
     private val nftId = "MetadataNftId"
     private val privateKey = "fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19"
 
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
-    private val connectionConfig = TransportClientConfig(
+    private val trustedNodes =
         listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
-    )
-    private val client = HttpTransportClient(scheme, connectionConfig)
+    private val client = HttpTransportClient(scheme, trustedNodes)
     private val testSubject = NftStorage(client)
 
     @Test
@@ -31,7 +29,11 @@ class EdekCommonTest {
             //given
             val nftPath = testSubject.storeMetadata(
                 nftId,
-                Erc721Metadata(name = "EdekCommonTest1", description = "testDescription", image = "http://image-site.com")
+                Erc721Metadata(
+                    name = "EdekCommonTest1",
+                    description = "testDescription",
+                    image = "http://image-site.com"
+                )
             )
             val cid = nftPath.url!!.split("/")[3].trim()
             val edek = Edek(scheme.publicKeyHex, "1234567890", "wrongCid")
@@ -50,7 +52,11 @@ class EdekCommonTest {
             //given
             val nftPath = testSubject.storeMetadata(
                 nftId,
-                Erc721Metadata(name = "EdekCommonTest2", description = "testDescription", image = "http://image-site.com")
+                Erc721Metadata(
+                    name = "EdekCommonTest2",
+                    description = "testDescription",
+                    image = "http://image-site.com"
+                )
             )
             val edek = testSubject.storeEdek(nftId, nftPath, Edek(scheme.publicKeyHex, "1234567890"))
 
@@ -74,7 +80,11 @@ class EdekCommonTest {
             )
             val nftPath = testSubject.storeMetadata(
                 nftId,
-                Erc721Metadata(name = "EdekCommonTest3", description = "testDescription", image = "http://image-site.com")
+                Erc721Metadata(
+                    name = "EdekCommonTest3",
+                    description = "testDescription",
+                    image = "http://image-site.com"
+                )
             )
             val edek = testSubject.storeEdek(nftId, nftPath, Edek(scheme.publicKeyHex, "1234567890"))
 
@@ -84,7 +94,7 @@ class EdekCommonTest {
 
             //when
             val resultDirectly = nodes.map {
-                val client = NftStorage(HttpTransportClient(scheme, TransportClientConfig(listOf(it))))
+                val client = NftStorage(HttpTransportClient(scheme, listOf(it)))
                 client.readEdek(nftId, nftPath, scheme.publicKeyHex)
             }
 

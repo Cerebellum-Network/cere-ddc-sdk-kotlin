@@ -7,22 +7,20 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
-import network.cere.ddc.nft.config.TransportClientConfig
 import network.cere.ddc.nft.model.metadata.Erc1155Metadata
 import network.cere.ddc.nft.model.metadata.Erc721Metadata
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-class MetadataCommonTest {
+internal class MetadataCommonTest {
 
     private val nftId = "MetadataNftId"
     private val privateKey = "fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19"
 
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
-    private val connectionConfig = TransportClientConfig(
-            listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
-    )
-    private val client = HttpTransportClient(scheme, connectionConfig)
+    private val trustedNodes =
+        listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
+    private val client = HttpTransportClient(scheme, trustedNodes)
     private val testSubject = NftStorage(client)
 
     @Test
@@ -83,7 +81,7 @@ class MetadataCommonTest {
 
             //when
             val resultDirectly = nodes.map {
-                val client = NftStorage(HttpTransportClient(scheme, TransportClientConfig(listOf(it))))
+                val client = NftStorage(HttpTransportClient(scheme, listOf(it)))
                 client.readMetadata(nftId, nftPath)
             }
 

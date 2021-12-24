@@ -7,20 +7,18 @@ import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.NftStorage
 import network.cere.ddc.nft.client.HttpTransportClient
-import network.cere.ddc.nft.config.TransportClientConfig
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-class AssetCommonTest {
+internal class AssetCommonTest {
 
     private val nftId = "AssetNftId"
     private val privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
 
     private val scheme = Scheme.create(Scheme.ED_25519, privateKey)
-    private val connectionConfig = TransportClientConfig(
+    private val trustedNodes =
         listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
-    )
-    private val client = HttpTransportClient(scheme, connectionConfig)
+    private val client = HttpTransportClient(scheme, trustedNodes)
     private val testSubject = NftStorage(client)
 
     @Test
@@ -72,7 +70,7 @@ class AssetCommonTest {
 
             //when
             val resultDirectly = nodes.map {
-                val client = NftStorage(HttpTransportClient(scheme, TransportClientConfig(listOf(it))))
+                val client = NftStorage(HttpTransportClient(scheme, listOf(it)))
                 client.readAsset(nftId, nftPath)
             }
 

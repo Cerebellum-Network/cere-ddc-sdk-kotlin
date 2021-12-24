@@ -22,24 +22,19 @@ dependencies {
 }
 ```
 
-### General
+### NFT Storage
 
-Create storage client
+#### Create client
 
 ```kotlin
 val trustedNodes = listOf(
     Node(id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT", address = "https://127.0.0.1:8080"),
     Node(id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC", address = "https://127.0.0.2:8080")
 )
-val transportClientConfig = TransportClientConfig(trustedNodes)
-val scheme = Scheme.create(Scheme.ED_25519, privateKeyHex)
-
-val transportClient = HttpTransportClient(scheme, transportClientConfig)
-
-val storage = NftStorage(transportClient)
+val storage = NftStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex)
 ```
 
-Store NFT
+#### Store
 
 ```kotlin
 val nftId = "someNftId"
@@ -60,12 +55,10 @@ val edek = Edek(publicKeyHex, value)
 val storedEdek: Edek = storage.storeEdek(nftId, metadataNftPath, edek)
 ```
 
-Read NFT
+#### Read
 
 ```kotlin
-
 val assetBytes: ByteArray = storage.readAsset(nftId, assetNftPath)
 val metadata: Metadata = storage.readMetadata(nftId, metadataNftPath)
 val edek: Edek = storage.readEdek(nftId, metadataNftPath, publicKeyHex)
-
 ```

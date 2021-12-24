@@ -26,7 +26,8 @@ import kotlin.reflect.KClass
 
 class HttpTransportClient(
     private val scheme: Scheme,
-    private val config: TransportClientConfig,
+    private val trustedNodes: List<Node>,
+    private val config: TransportClientConfig = TransportClientConfig(),
     httpClient: HttpClient = defaultHttpClient(),
     private val schemas: Map<String, KClass<out Metadata>> = Metadata.getAllMetadata()
 ) : TransportClient {
@@ -43,11 +44,10 @@ class HttpTransportClient(
     private val client: HttpClient
     private val nodeFlag = AtomicInteger()
     private val objectMapper = jacksonObjectMapper()
-    private val nodeAddresses =
-        java.util.concurrent.ConcurrentHashMap(config.trustedNodes.associate { it.address to it.id })
+    private val nodeAddresses = java.util.concurrent.ConcurrentHashMap(trustedNodes.associate { it.address to it.id })
 
     init {
-        if (config.trustedNodes.isEmpty()) {
+        if (trustedNodes.isEmpty()) {
             throw IllegalStateException("Trusted node list is empty")
         }
 
@@ -116,9 +116,8 @@ class HttpTransportClient(
     ): T = try {
         val node = getNode()
         retry(
-            times = config.retryTimes,
-            backOff = config.retryBackOff,
-            { it is NftException || it is ConnectException }) {
+            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is ConnectException }
+        ) {
             val response = client.request<HttpResponse>(String.format(path, node.address, nftId)) {
                 method = HttpMethod.Put
                 body = data
@@ -143,9 +142,8 @@ class HttpTransportClient(
     ): T = try {
         val node = getNode()
         retry(
-            times = config.retryTimes,
-            backOff = config.retryBackOff,
-            { it is NftException || it is ConnectException }) {
+            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is ConnectException }
+        ) {
             val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
 
             return when (response.status) {
@@ -188,5 +186,5 @@ class HttpTransportClient(
         throw NftException("Couldn't get asset from nodes: $redirectNodeAddresses")
     }
 
-    private fun getNode() = config.trustedNodes[abs(nodeFlag.get()) % config.trustedNodes.size]
+    private fun getNode() = trustedNodes[abs(nodeFlag.get()) % trustedNodes.size]
 }
