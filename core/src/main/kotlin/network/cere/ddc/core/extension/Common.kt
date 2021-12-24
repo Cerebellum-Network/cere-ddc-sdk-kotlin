@@ -9,15 +9,11 @@ suspend inline fun <reified R> retry(
     predicate: (Exception) -> Boolean,
     action: () -> R
 ): R {
-    for (i in 1 until times) {
+    repeat(times - 1) {
         try {
             return action()
         } catch (e: Exception) {
-            if (predicate(e)) {
-                delay(backOff)
-                continue
-            }
-            throw e
+            if (predicate(e)) delay(backOff) else throw e
         }
     }
 

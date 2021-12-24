@@ -81,9 +81,7 @@ class HttpTransportClient(
     override suspend fun storeMetadata(nftId: String, metadata: Metadata): NftPath =
         storeData("$BASIC_NFT_URL/metadata", nftId, metadata) {
             contentType(ContentType.Application.Json)
-            headers {
-                set(NFT_STANDARD_HEADER, metadata.schema)
-            }
+            headers { set(NFT_STANDARD_HEADER, metadata.schema) }
         }
 
     override suspend fun readMetadata(nftId: String, cid: String): Metadata {
@@ -94,10 +92,11 @@ class HttpTransportClient(
                     .lowercase()
         }
 
-        return requireNotNull(schemas[schemaName]) { "Unsupported metadata schema name: $schemaName" }.let {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            objectMapper.readValue(bytes, it.java)
-        }
+        return requireNotNull(schemas[schemaName]) { "Unsupported metadata schema name: $schemaName" }
+            .let {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                objectMapper.readValue(bytes, it.java)
+            }
     }
 
     override suspend fun storeEdek(nftId: String, cid: String, edek: Edek): Edek =
