@@ -31,7 +31,7 @@ val trustedNodes = listOf(
     Node(id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT", address = "https://127.0.0.1:8080"),
     Node(id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC", address = "https://127.0.0.2:8080")
 )
-val storage = NftStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex)
+val storage: NftStorage = NftStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex).build()
 ```
 
 #### Store
