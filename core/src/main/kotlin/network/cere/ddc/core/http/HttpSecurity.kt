@@ -14,10 +14,26 @@ import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * Security plugin for [HttpClient].
+ *
+ * Adds to HTTP request security values and signatures to headers.
+ * Headers: 'Expires', 'Signing-Algorithm', 'Client-Public-Key', 'Node-Id', 'Request-Signature', 'Signed-Headers'
+ * 'Content-SHA256' (PUT method) and 'Content-Signature' (PUT method).
+ */
 class HttpSecurity {
+    /** Used for signing request */
     var scheme: Scheme? = null
+
+    /** Used for setting 'Expires' header */
     var expiresAfter: Duration = Duration.ZERO
+
+    /**
+     * [Map] of node addresses for setting 'Node-Id' by http address. Have to be extended for new node adding in runtime.
+     */
     var nodeAddresses = mapOf<String, String>()
+
+    /** Custom headers for adding to request signature (header 'Request-Signature') */
     var signedHeaders: List<String> = listOf()
 
     companion object Feature : HttpClientFeature<HttpSecurity, HttpSecurity> {
@@ -50,10 +66,16 @@ class HttpSecurity {
                         set("Content-Signature", feature.scheme!!.sign(hash.toByteArray()))
                     }
 
-                    val content = feature.signedHeaders.asSequence()
-                        .map { "$it=${this[it]?.trim() ?: throw IllegalArgumentException("Invalid signed header $it")}" }
-                        .joinToString(separator = ";")
-                        .let { "${context.method.value}\n${context.url.encodedPath}\n${nodeId}\n${expireDate}\n${it}\n$hash" }
+                    val signedHeaders = feature.signedHeaders.takeIf(List<String>::isNotEmpty)
+                        ?.also { appendAll("Signed-Headers", it) }
+                        ?.let {
+                            feature.signedHeaders.asSequence()
+                                .map { "$it=${this[it]?.trim() ?: throw IllegalArgumentException("Invalid signed header $it")}" }
+                                .joinToString(separator = ";")
+                        } ?: ""
+
+                    val content =
+                        "${context.method.value}\n${context.url.encodedPath}\n${nodeId}\n${expireDate}\n${signedHeaders}\n$hash"
 
                     set("Request-Signature", feature.scheme!!.sign(content.toByteArray()))
                 }
