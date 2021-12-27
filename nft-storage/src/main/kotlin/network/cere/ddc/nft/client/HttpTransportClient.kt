@@ -19,7 +19,7 @@ import network.cere.ddc.nft.model.Edek
 import network.cere.ddc.nft.model.NftPath
 import network.cere.ddc.nft.model.metadata.Metadata
 import org.slf4j.LoggerFactory
-import java.net.ConnectException
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.reflect.KClass
@@ -116,7 +116,7 @@ class HttpTransportClient(
     ): T = try {
         val node = getNode()
         retry(
-            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is ConnectException }
+            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is IOException }
         ) {
             val response = client.request<HttpResponse>(String.format(path, node.address, nftId)) {
                 method = HttpMethod.Put
@@ -142,7 +142,7 @@ class HttpTransportClient(
     ): T = try {
         val node = getNode()
         retry(
-            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is ConnectException }
+            times = config.retryTimes, backOff = config.retryBackOff, { it is NftException || it is IOException }
         ) {
             val response = client.get<HttpResponse>(String.format(path, node.address, nftId, cid))
 
