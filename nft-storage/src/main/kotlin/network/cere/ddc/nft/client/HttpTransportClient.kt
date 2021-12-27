@@ -10,7 +10,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.http.HttpSecurity
-import network.cere.ddc.core.http.defaultHttpClient
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.nft.config.TransportClientConfig
@@ -28,7 +27,7 @@ class HttpTransportClient(
     private val scheme: Scheme,
     private val trustedNodes: List<Node>,
     private val config: TransportClientConfig = TransportClientConfig(),
-    httpClient: HttpClient = defaultHttpClient(),
+    httpClient: HttpClient = HttpClient(),
     private val schemas: Map<String, KClass<out Metadata>> = Metadata.getAllMetadata()
 ) : TransportClient {
 

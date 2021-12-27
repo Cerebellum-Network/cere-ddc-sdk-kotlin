@@ -1,6 +1,6 @@
 package network.cere.ddc.core.extension
 
-import kotlinx.coroutines.time.delay
+import kotlinx.coroutines.delay
 import java.time.Duration
 
 suspend inline fun <reified R> retry(
@@ -13,7 +13,7 @@ suspend inline fun <reified R> retry(
         try {
             return action()
         } catch (e: Exception) {
-            if (predicate(e)) delay(backOff) else throw e
+            if (predicate(e)) delay(backOff.toMillis()) else throw e
         }
     }
 

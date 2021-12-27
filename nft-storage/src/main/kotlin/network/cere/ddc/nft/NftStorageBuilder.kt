@@ -1,5 +1,6 @@
 package network.cere.ddc.nft
 
+import io.ktor.client.*
 import network.cere.ddc.core.model.Node
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.signature.Scheme.Companion.ED_25519
@@ -19,6 +20,8 @@ class NftStorageBuilder {
         private set
     var privateKey: String = ""
         private set
+    var httpClient: HttpClient = HttpClient()
+        private set
 
     fun trustedNodes(trustedNodes: List<Node>) = apply { this.trustedNodes = trustedNodes }
 
@@ -31,7 +34,9 @@ class NftStorageBuilder {
 
     fun privateKey(privateKey: String) = apply { this.privateKey = privateKey }
 
+    fun httpClient(httpClient: HttpClient) = apply { this.httpClient = httpClient }
+
     fun build(): NftStorage =
-        HttpTransportClient(Scheme.create(scheme, privateKey), trustedNodes, transportClientConfig)
+        HttpTransportClient(Scheme.create(scheme, privateKey), trustedNodes, transportClientConfig, httpClient)
             .let { NftStorage(it, nftStorageConfig) }
 }

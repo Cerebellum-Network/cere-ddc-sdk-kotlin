@@ -27,10 +27,10 @@ subprojects {
     afterEvaluate {
         dependencies {
             "implementation"("org.jetbrains.kotlin:kotlin-stdlib:${Versions.kotlin}")
+            "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
 
             // HTTP
             "implementation"("io.ktor:ktor-client-core:${Versions.ktor}")
-            "implementation"("io.ktor:ktor-client-java:${Versions.ktor}")
 
             // Logging
             "implementation"("org.slf4j:slf4j-api:${Versions.slf4j}")
@@ -43,6 +43,7 @@ subprojects {
             "testImplementation"("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
             "testImplementation"("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
             "testImplementation"("io.ktor:ktor-client-mock:${Versions.ktor}")
+            "testImplementation"("io.ktor:ktor-client-java:${Versions.ktor}")
         }
     }
 
