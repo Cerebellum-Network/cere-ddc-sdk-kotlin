@@ -1,8 +1,6 @@
 package integration
 
 import io.kotest.matchers.shouldBe
-import io.ktor.client.*
-import io.ktor.client.engine.java.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import network.cere.ddc.core.model.Node
@@ -22,7 +20,7 @@ internal class MetadataCommonTest {
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val trustedNodes =
         listOf(Node(address = "http://localhost:8080", id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT"))
-    private val client = HttpTransportClient(scheme, trustedNodes, httpClient = HttpClient(Java))
+    private val client = HttpTransportClient(scheme, trustedNodes)
     private val testSubject = NftStorage(client)
 
     @Test
