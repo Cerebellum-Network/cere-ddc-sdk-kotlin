@@ -6,8 +6,8 @@ import network.cere.ddc.`object`.model.ObjectPath
 interface TransportClient : AutoCloseable {
 
     suspend fun storeObject(bucketId: String, data: ByteArray): ObjectPath
-    suspend fun readObject(bucketId: String, cid: String): ByteArray
-    suspend fun storeEdek(bucketId: String, cid: String, edek: Edek): Edek
-    suspend fun readEdek(bucketId: String, cid: String, publicKeyHex: String): Edek
+    suspend fun readObject(objectPath: ObjectPath): ByteArray
+    suspend fun storeEdek(objectPath: ObjectPath, edek: Edek): Edek
+    suspend fun readEdek(objectPath: ObjectPath, publicKeyHex: String): Edek
 
 }

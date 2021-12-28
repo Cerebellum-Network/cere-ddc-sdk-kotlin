@@ -75,7 +75,8 @@ internal class HttpTransportClientTest {
             }
 
             //when
-            val result = testSubject.readObject(bucketId, "someCid")
+
+            val result = testSubject.readObject(ObjectPath("cns://$bucketId/someCid"))
 
             //then
             result shouldBe data.toByteArray()
@@ -109,7 +110,7 @@ internal class HttpTransportClientTest {
             }
 
             //when
-            val result = testSubject.readObject(bucketId, "someCid")
+            val result = testSubject.readObject(ObjectPath("cns://$bucketId/someCid"))
 
             //then
             result shouldBe data.toByteArray()

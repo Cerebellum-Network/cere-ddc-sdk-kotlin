@@ -41,16 +41,16 @@ internal class ObjectStorageTest {
             //given
             val data = "testData".toByteArray()
             val cid = "cid"
-            val url = "cns://routing-key/$cid"
+            val url = "cns://$bucketId/$cid"
 
-            whenever(client.readObject(bucketId, cid)).thenReturn(data)
+            whenever(client.readObject(ObjectPath(url))).thenReturn(data)
 
             //when
-            val result = testSubject.readObject(bucketId, ObjectPath(url))
+            val result = testSubject.readObject(ObjectPath(url))
 
             //then
             result shouldBe data
-            verify(client).readObject(bucketId, cid)
+            verify(client).readObject(ObjectPath(url))
         }
     }
 

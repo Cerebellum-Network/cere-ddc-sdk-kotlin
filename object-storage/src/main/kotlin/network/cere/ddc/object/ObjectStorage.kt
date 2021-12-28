@@ -34,15 +34,16 @@ class ObjectStorage(
     /**
      * Read data from Object Storage. Retries on exception.
      *
-     * @param bucketId bucket identifier where stored data
-     * @param objectPath path with CID to stored data
+     * @param objectPath path with CID and bucket identifier to stored data
      *
      * @throws ReadObjectException on failed reading after all retries
      *
      * @return encrypted bytes of data
      */
-    suspend fun readObject(bucketId: String, objectPath: ObjectPath): ByteArray = try {
-        retry("Couldn't read data from Object Storage") { client.readObject(bucketId, parseCid(objectPath)) }
+    suspend fun readObject(objectPath: ObjectPath): ByteArray = try {
+        retry("Couldn't read data from Object Storage") {
+            client.readObject(objectPath)
+        }
     } catch (e: Exception) {
         throw ReadObjectException("Couldn't read data", e)
     }
@@ -50,16 +51,17 @@ class ObjectStorage(
     /**
      * Save EDEK to Object Storage. Retries on exception.
      *
-     * @param bucketId bucket identifier where stored metadata and store EDEK
-     * @param objectPath Object path with CID to metadata for Object
+     * @param objectPath path with CID and bucket identifier for Object
      * @param edek Object path with CID to metadata in Object Storage
      *
      * @throws EdekSaveObjectException on failed storing after all retries
      *
      * @return stored EDEK in Object Storage
      */
-    suspend fun storeEdek(bucketId: String, objectPath: ObjectPath, edek: Edek): Edek = try {
-        retry("Couldn't store EDEK to Object Storage") { client.storeEdek(bucketId, parseCid(objectPath), edek) }
+    suspend fun storeEdek(objectPath: ObjectPath, edek: Edek): Edek = try {
+        retry("Couldn't store EDEK to Object Storage") {
+            client.storeEdek(objectPath, edek)
+        }
     } catch (e: Exception) {
         throw EdekSaveObjectException("Couldn't store EDEK", e)
     }
@@ -67,30 +69,19 @@ class ObjectStorage(
     /**
      * Read EDEK from Object Storage. Retries on exception.
      *
-     * @param bucketId bucket identifier where stored EDEK
-     * @param objectPath path with CID to metadata for Object
+     * @param objectPath path with CID and bucket identifier for Object
      * @param publicKeyHex EDEK public key in Hex format
      *
      * @throws EdekReadObjectException on failed reading after all retries
      *
      * @return EDEK from Object Storage
      */
-    suspend fun readEdek(bucketId: String, objectPath: ObjectPath, publicKeyHex: String): Edek = try {
+    suspend fun readEdek(objectPath: ObjectPath, publicKeyHex: String): Edek = try {
         retry("Couldn't read EDEK from Object Storage") {
-            client.readEdek(bucketId, parseCid(objectPath), publicKeyHex)
+            client.readEdek(objectPath, publicKeyHex)
         }
     } catch (e: Exception) {
         throw EdekReadObjectException("Couldn't read EDEK", e)
-    }
-
-    private fun parseCid(objectPath: ObjectPath): String {
-        val path = objectPath.url!!.split("/")
-
-        if (path.size != 4 || path[3].trim().isEmpty()) {
-            throw IllegalArgumentException("Invalid Object path url")
-        }
-
-        return path[3]
     }
 
     private suspend inline fun <reified R> retry(message: String, action: () -> R) =

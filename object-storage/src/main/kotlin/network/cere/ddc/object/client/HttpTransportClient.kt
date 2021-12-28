@@ -67,16 +67,19 @@ class HttpTransportClient(
     override suspend fun storeObject(bucketId: String, data: ByteArray): ObjectPath =
         storeData(BASIC_OBJECT_URL, bucketId, data)
 
-    override suspend fun readObject(bucketId: String, cid: String): ByteArray =
-        readData("$BASIC_OBJECT_URL/$cid", bucketId)
+    override suspend fun readObject(objectPath: ObjectPath): ByteArray =
+        readData("$BASIC_OBJECT_URL/%s", objectPath)
 
-    override suspend fun storeEdek(bucketId: String, cid: String, edek: Edek): Edek =
-        storeData("$BASIC_OBJECT_URL/$cid/edek", bucketId, edek.copy(objectCid = cid)) {
+    override suspend fun storeEdek(objectPath: ObjectPath, edek: Edek): Edek {
+        val path = parseObjectPath(objectPath)
+        return storeData("$BASIC_OBJECT_URL/${path.cid}/edek", path.bucketId, edek.copy(objectCid = path.cid)) {
             contentType(ContentType.Application.Json)
         }
+    }
 
-    override suspend fun readEdek(bucketId: String, cid: String, publicKeyHex: String): Edek =
-        readData("$BASIC_OBJECT_URL/$cid/edek/$publicKeyHex", bucketId)
+
+    override suspend fun readEdek(objectPath: ObjectPath, publicKeyHex: String): Edek =
+        readData("$BASIC_OBJECT_URL/%s/edek/$publicKeyHex", objectPath)
 
     override fun close() {
         client.close()
@@ -86,9 +89,7 @@ class HttpTransportClient(
         path: String, bucketId: String, data: Any, block: HttpRequestBuilder.() -> Unit = {}
     ): T = try {
         val node = getNode()
-        retry(
-            times = config.retryTimes, backOff = config.retryBackOff, { it is ObjectException || it is IOException }
-        ) {
+        retry(config.retryTimes, config.retryBackOff, { it is ObjectException || it is IOException }) {
             val response = client.request<HttpResponse>(String.format(path, node.address)) {
                 method = HttpMethod.Put
                 body = data
@@ -110,13 +111,14 @@ class HttpTransportClient(
     }
 
     private suspend inline fun <reified T> readData(
-        path: String, bucketId: String, validation: (HttpResponse) -> (Unit) = {}
+        path: String, objectPath: ObjectPath, validation: (HttpResponse) -> (Unit) = {}
     ): T = try {
         val node = getNode()
-        retry(
-            times = config.retryTimes, backOff = config.retryBackOff, { it is ObjectException || it is IOException }
-        ) {
-            val response = client.get<HttpResponse>(String.format(path, node.address)) { addBucketId(bucketId) }
+        val parsedObjectPath = parseObjectPath(objectPath)
+        retry(config.retryTimes, config.retryBackOff, { it is ObjectException || it is IOException }) {
+            val response = client.get<HttpResponse>(String.format(path, node.address, parsedObjectPath.cid)) {
+                addBucketId(parsedObjectPath.bucketId)
+            }
 
             return when (response.status) {
                 HttpStatusCode.OK -> {
@@ -125,7 +127,7 @@ class HttpTransportClient(
                 HttpStatusCode.MultipleChoices -> {
                     response.receive<List<Node>>()
                         .onEach { nodeAddresses[it.address] = it.id }
-                        .let { redirectToNodes(path, bucketId, it) }
+                        .let { redirectToNodes(path, parsedObjectPath.bucketId, parsedObjectPath.cid, it) }
                 }
                 else -> {
                     throw ObjectException("Invalid response status for node=$node. Response: status=${response.status} body='${response.receive<String>()}'")
@@ -138,10 +140,10 @@ class HttpTransportClient(
     }
 
     private suspend inline fun <reified T> redirectToNodes(
-        path: String, bucketId: String, redirectNodeAddresses: List<Node>
+        path: String, bucketId: String, cid: String, redirectNodeAddresses: List<Node>
     ): T {
         redirectNodeAddresses.forEach { node ->
-            val response = client.get<HttpResponse>(String.format(path, node.address)) { addBucketId(bucketId) }
+            val response = client.get<HttpResponse>(String.format(path, node.address, cid)) { addBucketId(bucketId) }
 
             if (response.status == HttpStatusCode.OK) {
                 return response.receive()
@@ -161,4 +163,17 @@ class HttpTransportClient(
     private fun getNode() = trustedNodes[abs(nodeFlag.get()) % trustedNodes.size]
 
     private fun HttpRequestBuilder.addBucketId(bucketId: String) = headers { set(BUCKET_ID_HEADER, bucketId) }
+
+
+    private fun parseObjectPath(objectPath: ObjectPath): Path {
+        val path = objectPath.url!!.split("/")
+
+        if (path.size != 4 || path[3].trim().isEmpty() || path[2].trim().isEmpty()) {
+            throw IllegalArgumentException("Invalid Object path url")
+        }
+
+        return Path(path[2], path[3])
+    }
+
+    private data class Path(val bucketId: String, val cid: String)
 }

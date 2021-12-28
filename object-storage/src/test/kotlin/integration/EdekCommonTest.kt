@@ -32,7 +32,7 @@ internal class EdekCommonTest {
             val edek = Edek(scheme.publicKeyHex, "1234567890", "wrongCid")
 
             //when
-            val result = testSubject.storeEdek(bucketId, objectPath, edek)
+            val result = testSubject.storeEdek(objectPath, edek)
 
             //then
             result shouldBe edek.copy(objectCid = cid)
@@ -45,10 +45,10 @@ internal class EdekCommonTest {
             //given
             val bucketId = "BucketId_read_edek_test"
             val objectPath = testSubject.storeObject(bucketId, metadata)
-            val edek = testSubject.storeEdek(bucketId, objectPath, Edek(scheme.publicKeyHex, "1234567890"))
+            val edek = testSubject.storeEdek(objectPath, Edek(scheme.publicKeyHex, "1234567890"))
 
             //when
-            val result = testSubject.readEdek(bucketId, objectPath, scheme.publicKeyHex)
+            val result = testSubject.readEdek(objectPath, scheme.publicKeyHex)
 
             //then
             result shouldBe edek
@@ -67,7 +67,7 @@ internal class EdekCommonTest {
             )
             val bucketId = "BucketId_read_edek_redirect_test"
             val objectPath = testSubject.storeObject(bucketId, metadata)
-            val edek = testSubject.storeEdek(bucketId, objectPath, Edek(scheme.publicKeyHex, "1234567890"))
+            val edek = testSubject.storeEdek(objectPath, Edek(scheme.publicKeyHex, "1234567890"))
 
 
             //wait until routing table update state for new object
@@ -76,7 +76,7 @@ internal class EdekCommonTest {
             //when
             val resultDirectly = nodes.map {
                 val client = ObjectStorage(HttpTransportClient(scheme, listOf(it)))
-                client.readEdek(bucketId, objectPath, scheme.publicKeyHex)
+                client.readEdek(objectPath, scheme.publicKeyHex)
             }
 
             //then

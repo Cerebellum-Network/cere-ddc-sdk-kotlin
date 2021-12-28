@@ -44,7 +44,7 @@ internal class ObjectCommonTest {
             val objectPath = testSubject.storeObject(bucketId, data)
 
             //when
-            val result = testSubject.readObject(bucketId, objectPath)
+            val result = testSubject.readObject(objectPath)
 
             //then
             result shouldBe data
@@ -70,7 +70,7 @@ internal class ObjectCommonTest {
             //when
             val resultDirectly = nodes.map {
                 val client = ObjectStorage(HttpTransportClient(scheme, listOf(it)))
-                client.readObject(bucketId, objectPath)
+                client.readObject(objectPath)
             }
 
             //then
