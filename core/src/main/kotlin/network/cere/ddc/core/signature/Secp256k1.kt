@@ -1,6 +1,7 @@
 package network.cere.ddc.core.signature
 
 import network.cere.ddc.core.extension.hexToBytes
+import network.cere.ddc.core.extension.toHex
 import network.cere.ddc.core.signature.Scheme.Companion.SECP_256_K_1
 import org.kethereum.crypto.*
 import org.kethereum.extensions.toBigInteger
@@ -10,7 +11,6 @@ import org.kethereum.model.ECKeyPair
 import org.kethereum.model.PrivateKey
 import org.kethereum.model.SignatureData
 import org.komputing.khex.extensions.prepend0xPrefix
-import org.komputing.khex.extensions.toNoPrefixHexString
 import org.komputing.khex.model.HexString
 import java.security.SignatureException
 
@@ -49,7 +49,7 @@ class Secp256k1(privateKeyHex: String) : Scheme {
                 .string
                 .hexToBytes()
                 .keccak()
-                .toNoPrefixHexString()
+                .toHex(false)
                 .takeLast(40)
         } catch (e: SignatureException) {
             return false

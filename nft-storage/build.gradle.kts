@@ -1,5 +1,6 @@
 dependencies {
     implementation(project(":core"))
 
-    implementation("io.ktor:ktor-client-jackson:${Versions.ktor}")
+    testImplementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+    testImplementation("io.ktor:ktor-client-java:${Versions.ktor}")
 }

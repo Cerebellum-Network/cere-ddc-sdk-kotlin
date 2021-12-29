@@ -4,19 +4,19 @@ import com.debuggor.schnorrkel.sign.ExpansionMode
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.debuggor.schnorrkel.sign.SigningContext
 import network.cere.ddc.core.extension.hexToBytes
+import network.cere.ddc.core.extension.toHex
 import network.cere.ddc.core.signature.Scheme.Companion.SR_25519
-import org.komputing.khex.extensions.toHexString
 
 class Sr25519(privateKeyHex: String) : Scheme {
 
     private val keyPair = KeyPair.fromSecretSeed(privateKeyHex.hexToBytes(), ExpansionMode.Ed25519)
 
     override val name = SR_25519
-    override val publicKeyHex = keyPair.publicKey.toPublicKey().toHexString()
+    override val publicKeyHex = keyPair.publicKey.toPublicKey().toHex()
 
     override fun sign(data: ByteArray): String {
         val signingContext = SigningContext.createSigningContext("substrate".toByteArray())
-        return keyPair.sign(signingContext.bytes(data)).to_bytes().toHexString()
+        return keyPair.sign(signingContext.bytes(data)).to_bytes().toHex()
     }
 
     override fun verify(data: ByteArray, signature: String): Boolean {

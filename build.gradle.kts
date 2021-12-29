@@ -16,6 +16,10 @@ subprojects {
         mavenLocal()
         mavenCentral()
         maven("https://jitpack.io")
+
+        flatDir {
+            dirs("libs")
+        }
     }
 
     group = "com.github.cerebellum-network.cere-ddc-sdk-kotlin"
@@ -26,24 +30,26 @@ subprojects {
 
     afterEvaluate {
         dependencies {
-            "implementation"("org.jetbrains.kotlin:kotlin-stdlib:${Versions.kotlin}")
-            "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+            implementation(kotlin("stdlib"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
 
             // HTTP
-            "implementation"("io.ktor:ktor-client-core:${Versions.ktor}")
+            implementation("io.ktor:ktor-client-core:${Versions.ktor}")
 
             // Logging
-            "implementation"("org.slf4j:slf4j-api:${Versions.slf4j}")
+            implementation("org.slf4j:slf4j-api:${Versions.slf4j}")
+
+            // JSON
+            implementation("io.ktor:ktor-client-jackson:${Versions.ktor}")
 
             // Test
-            "testImplementation"("org.jetbrains.kotlin:kotlin-test-junit5:${Versions.kotlin}")
-            "testImplementation"("org.junit.jupiter:junit-jupiter-api:${Versions.junit}")
-            "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:${Versions.junit}")
-            "testImplementation"("org.junit.jupiter:junit-jupiter-params:${Versions.junit}")
-            "testImplementation"("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
-            "testImplementation"("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
-            "testImplementation"("io.ktor:ktor-client-mock:${Versions.ktor}")
-            "testImplementation"("io.ktor:ktor-client-java:${Versions.ktor}")
+            testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${Versions.kotlin}")
+            testImplementation("org.junit.jupiter:junit-jupiter-api:${Versions.junit}")
+            testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Versions.junit}")
+            testImplementation("org.junit.jupiter:junit-jupiter-params:${Versions.junit}")
+            testImplementation("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
+            testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
+
         }
     }
 
