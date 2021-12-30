@@ -10,6 +10,7 @@ import network.cere.ddc.contract.model.BucketStatus
 import network.cere.ddc.core.extension.hexPrefix
 import org.slf4j.LoggerFactory
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 class ObjectStorageSmartContractClient(
@@ -27,8 +28,8 @@ class ObjectStorageSmartContractClient(
 
         return BucketStatus(
             providerId = response.readString(),
-            rentEnd = response.readUint128().toLong()
-                .let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()) },
+            rentEnd = response.readUint32() //ToDo in contract UInt64
+                .let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) },
             writers = response.read(ListReader(StringReader()))
         )
     }

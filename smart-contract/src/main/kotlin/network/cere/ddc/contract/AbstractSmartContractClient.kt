@@ -17,7 +17,7 @@ import java.io.ByteArrayOutputStream
 
 abstract class AbstractSmartContractClient(
     blockchainConfig: BlockchainConfig,
-    address: String,
+    contractAddress: String,
 ) : AutoCloseable {
 
     private val api = PolkadotHttpApi
@@ -26,7 +26,7 @@ abstract class AbstractSmartContractClient(
         .connectTo(blockchainConfig.httpUrl)
         .build()
     private val operationalWallet = Address.from(blockchainConfig.operationalWallet)
-    private val contractAddress = Address.from(address)
+    private val contractAddress = Address.from(contractAddress)
 
     override fun close() {
         api.close()
