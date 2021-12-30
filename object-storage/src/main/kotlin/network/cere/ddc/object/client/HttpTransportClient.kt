@@ -64,7 +64,7 @@ class HttpTransportClient(
         }
     }
 
-    override suspend fun storeObject(bucketId: String, data: ByteArray): ObjectPath =
+    override suspend fun storeObject(bucketId: Long, data: ByteArray): ObjectPath =
         storeData(BASIC_OBJECT_URL, bucketId, data)
 
     override suspend fun readObject(objectPath: ObjectPath): ByteArray =
@@ -86,7 +86,7 @@ class HttpTransportClient(
     }
 
     private suspend inline fun <reified T> storeData(
-        path: String, bucketId: String, data: Any, block: HttpRequestBuilder.() -> Unit = {}
+        path: String, bucketId: Long, data: Any, block: HttpRequestBuilder.() -> Unit = {}
     ): T = try {
         val node = getNode()
         retry(config.retryTimes, config.retryBackOff, { it is ObjectException || it is IOException }) {
@@ -140,7 +140,7 @@ class HttpTransportClient(
     }
 
     private suspend inline fun <reified T> redirectToNodes(
-        path: String, bucketId: String, cid: String, redirectNodeAddresses: List<Node>
+        path: String, bucketId: Long, cid: String, redirectNodeAddresses: List<Node>
     ): T {
         redirectNodeAddresses.forEach { node ->
             val response = client.get<HttpResponse>(String.format(path, node.address, cid)) { addBucketId(bucketId) }
@@ -162,7 +162,7 @@ class HttpTransportClient(
 
     private fun getNode() = trustedNodes[abs(nodeFlag.get()) % trustedNodes.size]
 
-    private fun HttpRequestBuilder.addBucketId(bucketId: String) = headers { set(BUCKET_ID_HEADER, bucketId) }
+    private fun HttpRequestBuilder.addBucketId(bucketId: Long) = headers { set(BUCKET_ID_HEADER, bucketId.toString()) }
 
 
     private fun parseObjectPath(objectPath: ObjectPath): Path {
@@ -172,8 +172,8 @@ class HttpTransportClient(
             throw IllegalArgumentException("Invalid Object path url")
         }
 
-        return Path(path[2], path[3])
+        return Path(path[2].toLong(), path[3])
     }
 
-    private data class Path(val bucketId: String, val cid: String)
+    private data class Path(val bucketId: Long, val cid: String)
 }

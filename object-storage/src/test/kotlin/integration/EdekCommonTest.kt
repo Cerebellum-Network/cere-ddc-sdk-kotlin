@@ -26,7 +26,7 @@ internal class EdekCommonTest {
     fun `Store edek`() {
         runBlocking {
             //given
-            val bucketId = "BucketId_store_edek_test"
+            val bucketId = 1L
             val objectPath = testSubject.storeObject(bucketId, metadata)
             val cid = objectPath.url!!.split("/")[3].trim()
             val edek = Edek(scheme.publicKeyHex, "1234567890", "wrongCid")
@@ -43,7 +43,7 @@ internal class EdekCommonTest {
     fun `Read edek`() {
         runBlocking {
             //given
-            val bucketId = "BucketId_read_edek_test"
+            val bucketId = 2L
             val objectPath = testSubject.storeObject(bucketId, metadata)
             val edek = testSubject.storeEdek(objectPath, Edek(scheme.publicKeyHex, "1234567890"))
 
@@ -65,7 +65,7 @@ internal class EdekCommonTest {
                 Node(address = "http://localhost:8082", id = "12D3KooWPfi9EtgoZHFnHh1at85mdZJtj7L8n94g6LFk6e8EEk2b"),
                 Node(address = "http://localhost:8083", id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC")
             )
-            val bucketId = "BucketId_read_edek_redirect_test"
+            val bucketId = 3L
             val objectPath = testSubject.storeObject(bucketId, metadata)
             val edek = testSubject.storeEdek(objectPath, Edek(scheme.publicKeyHex, "1234567890"))
 

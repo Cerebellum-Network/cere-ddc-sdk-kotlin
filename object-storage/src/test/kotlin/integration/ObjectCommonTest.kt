@@ -12,7 +12,7 @@ import java.time.Duration
 
 internal class ObjectCommonTest {
 
-    private val bucketId = "BucketId"
+    private val bucketId = 10L
     private val privateKey = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
 
     private val scheme = Scheme.create(Scheme.ED_25519, privateKey)

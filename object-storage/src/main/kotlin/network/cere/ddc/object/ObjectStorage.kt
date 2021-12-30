@@ -25,7 +25,7 @@ class ObjectStorage(
      *
      * @return path with CID to stored data
      */
-    suspend fun storeObject(bucketId: String, data: ByteArray): ObjectPath = try {
+    suspend fun storeObject(bucketId: Long, data: ByteArray): ObjectPath = try {
         retry("Couldn't store data to Object Storage") { client.storeObject(bucketId, data) }
     } catch (e: Exception) {
         throw SaveObjectException("Couldn't store data", e)

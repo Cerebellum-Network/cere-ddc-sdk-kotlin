@@ -20,7 +20,7 @@ import org.mockito.kotlin.times
 internal class HttpTransportClientTest {
 
     private val nodeId = "123456789"
-    private val bucketId = "bucketId"
+    private val bucketId = 30L
     private val publicKey = "0xd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
     private val schemeName = "Ed25519"
 
@@ -145,6 +145,6 @@ internal class HttpTransportClientTest {
         this["Request-Signature"] shouldBe "signature"
         this["Client-Public-Key"] shouldBe publicKey
         this["Signing-Algorithm"] shouldBe schemeName
-        this["Bucket-Id"] shouldBe bucketId
+        this["Bucket-Id"] shouldBe bucketId.toString()
     }
 }

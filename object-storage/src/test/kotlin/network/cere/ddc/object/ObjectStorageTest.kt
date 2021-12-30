@@ -11,7 +11,7 @@ import org.mockito.kotlin.whenever
 
 internal class ObjectStorageTest {
 
-    private val bucketId = "testBucketId"
+    private val bucketId = 20L
 
     private val client: TransportClient = mock {}
 
