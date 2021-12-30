@@ -44,7 +44,7 @@ val objectPath: ObjectPath = storage.storeObject(bucketId, encryptedObjectBytes)
 
 // EDEK
 val edek = Edek(publicKeyHex, value)
-val storedEdek: Edek = storage.storeEdek(bucketId, objectPath, edek)
+val storedEdek: Edek = storage.storeEdek(objectPath, edek)
 ```
 
 #### Read
