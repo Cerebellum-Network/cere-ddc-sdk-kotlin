@@ -17,12 +17,12 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 dependencies {
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:core:0.0.1.Final")
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:nft-storage:0.0.1.Final")
+    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:core:0.2.0.Final")
+    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:object-storage:0.2.0.Final")
 }
 ```
 
-### NFT Storage
+### Object Storage
 
 #### Create client
 
@@ -31,34 +31,25 @@ val trustedNodes = listOf(
     Node(id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT", address = "https://127.0.0.1:8080"),
     Node(id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC", address = "https://127.0.0.2:8080")
 )
-val storage: NftStorage = NftStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex).build()
+val storage: ObjectStorage = ObjectStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex).build()
 ```
 
 #### Store
 
 ```kotlin
-val nftId = "someNftId"
+val bucketId = 10L
 
-// Asset
-val assetNftPath: NftPath = storage.storeAsset(nftId, encryptedAssetBytes, "image.jpeg")
-
-// Metadata ERC-721 schema
-val metadata = Erc721Metadata(
-    name = "Cere logo",
-    description = "Cere Network official logo image",
-    image = "https://cere.network/assets/images/home/footer-logo.svg"
-)
-val metadataNftPath: NftPath = storage.storeMetadata(nftId, metadata)
+// Object
+val objectPath: ObjectPath = storage.storeObject(bucketId, encryptedObjectBytes)
 
 // EDEK
 val edek = Edek(publicKeyHex, value)
-val storedEdek: Edek = storage.storeEdek(nftId, metadataNftPath, edek)
+val storedEdek: Edek = storage.storeEdek(objectPath, edek)
 ```
 
 #### Read
 
 ```kotlin
-val assetBytes: ByteArray = storage.readAsset(nftId, assetNftPath)
-val metadata: Metadata = storage.readMetadata(nftId, metadataNftPath)
-val edek: Edek = storage.readEdek(nftId, metadataNftPath, publicKeyHex)
+val objectBytes: ByteArray = storage.readObject(objectPath)
+val edek: Edek = storage.readEdek(objectPath, publicKeyHex)
 ```
