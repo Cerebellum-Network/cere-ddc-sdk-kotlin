@@ -17,8 +17,9 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 dependencies {
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:core:0.2.0.Final")
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:object-storage:0.2.0.Final")
+    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:core:0.3.0.Final")
+    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:object-storage:0.3.0.Final")
+    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:smart-contract:0.3.0.Final")
 }
 ```
 

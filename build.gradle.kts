@@ -7,7 +7,6 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
-
     maven("https://jitpack.io")
 }
 
@@ -45,7 +44,6 @@ subprojects {
             testImplementation("org.junit.jupiter:junit-jupiter-params:${Versions.junit}")
             testImplementation("io.kotest:kotest-assertions-core-jvm:${Versions.kotest}")
             testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
-
         }
     }
 
@@ -62,11 +60,6 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
-    }
-
-    dockerCompose {
-        isRequiredBy(tasks.test)
-        useComposeFiles = listOf("${ rootProject.buildDir }/../docker-compose/docker-compose.yml")
     }
 }
 
