@@ -16,10 +16,6 @@ subprojects {
         mavenLocal()
         mavenCentral()
         maven("https://jitpack.io")
-
-        flatDir {
-            dirs("libs")
-        }
     }
 
     group = "com.github.cerebellum-network.cere-ddc-sdk-kotlin"
