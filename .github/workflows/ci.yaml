@@ -24,8 +24,6 @@ jobs:
             ~/.gradle
             .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts') }}
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
       - name: Gradle Build
         run: ./gradlew build
       - name: codecov
