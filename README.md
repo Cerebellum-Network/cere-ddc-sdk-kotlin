@@ -17,39 +17,66 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 dependencies {
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:core:0.2.0.Final")
-    api("com.github.cerebellum-network.cere-ddc-sdk-kotlin:object-storage:0.2.0.Final")
+    implementation("com.github.cerebellum-network.cere-ddc-sdk-kotlin:content-addressable-storage:1.0.0.Prototype")
+    implementation("com.github.cerebellum-network.cere-ddc-sdk-kotlin:key-value-storage:1.0.0.Prototype")
 }
 ```
 
-### Object Storage
+### Content addressable storage
 
-#### Create client
+#### Setup
 
 ```kotlin
-val trustedNodes = listOf(
-    Node(id = "12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT", address = "https://127.0.0.1:8080"),
-    Node(id = "12D3KooWJLuJEmtYf3bakUwe2q1uMcnbCBKRg7GkpG6Ws74Aq6NC", address = "https://127.0.0.2:8080")
-)
-val storage: ObjectStorage = ObjectStorageBuilder().trustedNodes(trustedNodes).privateKey(privateKeyHex).build()
+val scheme = Scheme.create(Scheme.SR_25519, privateKey)
+val gatewayNodeUrl = "http://localhost:8080"
+val storage = ContentAddressableStorage(scheme, gatewayNodeUrl)
 ```
 
 #### Store
 
 ```kotlin
-val bucketId = 10L
-
-// Object
-val objectPath: ObjectPath = storage.storeObject(bucketId, encryptedObjectBytes)
+val bucketId = 1L
+val piece = Piece(
+    data = "Hello world!".toByteArray(),
+    tags = listOf(Tag(key = "Creator", value = "Jack"))
+)
 
 // EDEK
-val edek = Edek(publicKeyHex, value)
-val storedEdek: Edek = storage.storeEdek(objectPath, edek)
+val pieceUrl = storage.store(bucketId, piece)
 ```
 
 #### Read
 
 ```kotlin
-val objectBytes: ByteArray = storage.readObject(objectPath)
-val edek: Edek = storage.readEdek(objectPath, publicKeyHex)
+val savedPiece = storage.read(bucketId, pieceUrl.cid)
+```
+
+### Key value storage
+
+#### Setup
+
+```kotlin
+val scheme = Scheme.create(Scheme.SR_25519, privateKey)
+val gatewayNodeUrl = "http://localhost:8080"
+val storage = KeyValueStorage(scheme, gatewayNodeUrl)
+```
+
+#### Store
+
+```kotlin
+val bucketId = 1L
+val key = "unique piece"
+val piece = Piece(
+    data = "Hello world!".toByteArray(),
+    tags = listOf(Tag(key = "Creator", value = "Jack"))
+)
+
+// EDEK
+val pieceUrl = storage.store(bucketId, key, piece)
+```
+
+#### Read
+
+```kotlin
+val savedPiece = storage.read(bucketId, key)
 ```
