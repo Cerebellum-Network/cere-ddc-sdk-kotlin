@@ -22,3 +22,5 @@ services:
       - 'STORAGE_NODE_URL=http://ddc-storage-node:8090'
     ports:
       - '8080:8080'
+    depends_on:
+      - ddc-storage-node

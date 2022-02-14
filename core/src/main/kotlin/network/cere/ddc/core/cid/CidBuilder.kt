@@ -13,7 +13,6 @@ class CidBuilder(
 ) {
 
     private val typeToAlgorithm = mapOf(
-        Multihash.Type.md5 to "MD5",
         Multihash.Type.sha1 to "SHA-1",
         Multihash.Type.sha2_256 to "SHA-256",
         Multihash.Type.sha2_512 to "SHA-512"
