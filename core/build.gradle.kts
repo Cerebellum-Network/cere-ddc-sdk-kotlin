@@ -10,4 +10,7 @@ dependencies {
     implementation("com.github.komputing.kethereum:crypto_impl_bouncycastle:${Versions.kethereum}")
     implementation("com.github.komputing.kethereum:extensions_kotlin:${Versions.kethereum}")
     implementation("com.github.komputing.kethereum:keccak_shortcut:${Versions.kethereum}")
+
+    // CID
+    implementation("com.github.ipld:java-cid:${Versions.cid}")
 }

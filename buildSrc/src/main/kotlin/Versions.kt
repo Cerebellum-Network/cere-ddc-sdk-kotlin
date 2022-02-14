@@ -11,4 +11,7 @@ object Versions {
     val slf4j = "1.7.30"
     val docker = "0.14.3"
     val schnorrkel = "v1.0.4"
+    val protobufPlugin = "0.8.18"
+    val protobuf = "3.19.4"
+    val cid = "v1.3.1"
 }
