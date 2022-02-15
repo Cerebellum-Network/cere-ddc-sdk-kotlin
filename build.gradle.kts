@@ -64,7 +64,7 @@ subprojects {
 
     dockerCompose {
         isRequiredBy(tasks.test)
-        useComposeFiles = listOf("${ rootProject.buildDir }/../docker-compose/docker-compose.yml")
+        useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
     }
 }
 

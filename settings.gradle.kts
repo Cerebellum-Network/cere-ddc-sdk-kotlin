@@ -1,3 +1,5 @@
 rootProject.name = "cere-ddc-sdk-kotlin"
 include("core")
-include("object-storage")
+include("proto")
+include("content-addressable-storage")
+include("key-value-storage")

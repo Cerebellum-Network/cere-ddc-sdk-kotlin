@@ -1,120 +1,26 @@
 version: "3"
 
 services:
-  ddc-node-0:
-    container_name: 'ddc-node-0'
-    image: 'cerebellumnetwork/ddc-node:dev-latest'
+  ddc-storage-node:
+    container_name: 'ddc-storage-node'
+    image: 'cerebellumnetwork/ddc-storage-node:v1.0.0-prototype'
+    environment:
+      - 'HTTP_PORT=8090'
+      - 'HTTP_ADDRESS=http://localhost:8090'
+      - 'LOG_LEVEL=debug'
+      - 'LOG_JSON_FORMAT=false'
+    ports:
+      - '8090:8090'
+  ddc-gateway-node:
+    container_name: 'ddc-gateway-node'
+    image: 'cerebellumnetwork/ddc-gateway-node:v1.0.0-prototype'
     environment:
       - 'HTTP_PORT=8080'
       - 'HTTP_ADDRESS=http://localhost:8080'
-      - 'P2P_ADDRESS=/dns4/ddc-node-0/tcp/5000'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
-      - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
-      - 'FAULT_DETECTION_UPDATE_NEIGHBORS_INTERVAL=1s'
-      - 'FAULT_DETECTION_SHORT_TRANSIENT_FAULT_TIMEOUT=4s'
-      - 'FAULT_DETECTION_LONG_TRANSIENT_FAULT_TIMEOUT=20s'
-      - 'FAULT_DETECTION_COMPLETE_FAULT_TIMEOUT=40s'
-      - 'TEST_ENABLED=true'
-      - 'BUCKET_AUTH_ENABLED=false'
-      - 'TEST_DDC_NODES=${TEST_DDC_NODES}'
-      - 'NFT_STORAGE_ROUTING_TABLE_REBROADCAST_INTERVAL=3s'
-      - 'BEHAVIOUR_STORAGE_PARTITION_SIZE_LIMIT_BYTES=1000'
-      - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
-      - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
+      - 'STORAGE_NODE_URL=http://ddc-storage-node:8090'
     ports:
-      - '5000:5000'
       - '8080:8080'
-    networks:
-      - ddc_network_nft
-    volumes:
-      - ./node-0-p2p-config.json:/config/p2p.json
-  ddc-node-1:
-    container_name: 'ddc-node-1'
-    image: 'cerebellumnetwork/ddc-node:dev-latest'
-    environment:
-      - 'HTTP_PORT=8081'
-      - 'HTTP_ADDRESS=http://localhost:8081'
-      - 'P2P_ADDRESS=/dns4/ddc-node-1/tcp/5001'
-      - 'LOG_LEVEL=debug'
-      - 'LOG_JSON_FORMAT=false'
-      - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
-      - 'FAULT_DETECTION_UPDATE_NEIGHBORS_INTERVAL=1s'
-      - 'FAULT_DETECTION_SHORT_TRANSIENT_FAULT_TIMEOUT=4s'
-      - 'FAULT_DETECTION_LONG_TRANSIENT_FAULT_TIMEOUT=20s'
-      - 'FAULT_DETECTION_COMPLETE_FAULT_TIMEOUT=40s'
-      - 'TEST_ENABLED=true'
-      - 'BUCKET_AUTH_ENABLED=false'
-      - 'TEST_DDC_NODES=${TEST_DDC_NODES}'
-      - 'NFT_STORAGE_ROUTING_TABLE_REBROADCAST_INTERVAL=3s'
-      - 'BEHAVIOUR_STORAGE_PARTITION_SIZE_LIMIT_BYTES=1000'
-      - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
-      - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
-    ports:
-      - '5001:5001'
-      - '8081:8081'
-    networks:
-      - ddc_network_nft
-    volumes:
-      - ./node-1-p2p-config.json:/config/p2p.json
-  ddc-node-2:
-    container_name: 'ddc-node-2'
-    image: 'cerebellumnetwork/ddc-node:dev-latest'
-    environment:
-      - 'HTTP_PORT=8082'
-      - 'HTTP_ADDRESS=http://localhost:8082'
-      - 'P2P_ADDRESS=/dns4/ddc-node-2/tcp/5002'
-      - 'TEST_DDC_NODES=/dns4/ddc-node-0/tcp/5000/p2p/12D3KooWFRkkd4ycCPYEmeBzgfkrMrVSHWe6sYdgPo1JyAdLM4mT'
-      - 'LOG_LEVEL=debug'
-      - 'LOG_JSON_FORMAT=false'
-      - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
-      - 'FAULT_DETECTION_UPDATE_NEIGHBORS_INTERVAL=1s'
-      - 'FAULT_DETECTION_SHORT_TRANSIENT_FAULT_TIMEOUT=4s'
-      - 'FAULT_DETECTION_LONG_TRANSIENT_FAULT_TIMEOUT=20s'
-      - 'FAULT_DETECTION_COMPLETE_FAULT_TIMEOUT=40s'
-      - 'TEST_ENABLED=true'
-      - 'BUCKET_AUTH_ENABLED=false'
-      - 'TEST_DDC_NODES=${TEST_DDC_NODES}'
-      - 'NFT_STORAGE_ROUTING_TABLE_REBROADCAST_INTERVAL=3s'
-      - 'BEHAVIOUR_STORAGE_PARTITION_SIZE_LIMIT_BYTES=1000'
-      - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
-      - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
-    ports:
-      - '5002:5002'
-      - '8082:8082'
-    networks:
-      - ddc_network_nft
-    volumes:
-      - ./node-2-p2p-config.json:/config/p2p.json
-  ddc-node-3:
-    container_name: 'ddc-node-3'
-    image: 'cerebellumnetwork/ddc-node:dev-latest'
-    environment:
-      - 'HTTP_PORT=8083'
-      - 'HTTP_ADDRESS=http://localhost:8083'
-      - 'P2P_ADDRESS=/dns4/ddc-node-3/tcp/5003'
-      - 'LOG_LEVEL=debug'
-      - 'LOG_JSON_FORMAT=false'
-      - 'FAULT_DETECTION_HEARTBEAT_INTERVAL=1s'
-      - 'FAULT_DETECTION_UPDATE_NEIGHBORS_INTERVAL=1s'
-      - 'FAULT_DETECTION_SHORT_TRANSIENT_FAULT_TIMEOUT=4s'
-      - 'FAULT_DETECTION_LONG_TRANSIENT_FAULT_TIMEOUT=20s'
-      - 'FAULT_DETECTION_COMPLETE_FAULT_TIMEOUT=40s'
-      - 'TEST_ENABLED=true'
-      - 'BUCKET_AUTH_ENABLED=false'
-      - 'TEST_DDC_NODES=${TEST_DDC_NODES}'
-      - 'NFT_STORAGE_ROUTING_TABLE_REBROADCAST_INTERVAL=3s'
-      - 'BEHAVIOUR_STORAGE_PARTITION_SIZE_LIMIT_BYTES=1000'
-      - 'BEHAVIOUR_STORAGE_PARTITION_WCU_LIMIT=180'
-      - 'BEHAVIOUR_STORAGE_PARTITION_RCU_LIMIT=450'
-    ports:
-      - '5003:5003'
-      - '8083:8083'
-    networks:
-      - ddc_network_nft
-    volumes:
-      - ./node-3-p2p-config.json:/config/p2p.json
-
-networks:
-  ddc_network_nft:
-    name: ddc_network_nft
+    depends_on:
+      - ddc-storage-node
