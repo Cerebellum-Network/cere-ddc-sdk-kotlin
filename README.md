@@ -76,5 +76,5 @@ val pieceUrl = storage.store(bucketId, key, piece)
 #### Read
 
 ```kotlin
-val savedPiece = storage.read(bucketId, key)
+val savedPieces = storage.read(bucketId, key)
 ```
