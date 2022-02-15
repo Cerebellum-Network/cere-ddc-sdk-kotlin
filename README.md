@@ -41,7 +41,6 @@ val piece = Piece(
     tags = listOf(Tag(key = "Creator", value = "Jack"))
 )
 
-// EDEK
 val pieceUrl = storage.store(bucketId, piece)
 ```
 
@@ -71,7 +70,6 @@ val piece = Piece(
     tags = listOf(Tag(key = "Creator", value = "Jack"))
 )
 
-// EDEK
 val pieceUrl = storage.store(bucketId, key, piece)
 ```
 
