@@ -7,12 +7,12 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import network.cere.ddc.storage.config.ClientConfig
-import network.cere.ddc.storage.domain.*
-import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.cid.CidBuilder
+import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.proto.Storage
+import network.cere.ddc.storage.config.ClientConfig
+import network.cere.ddc.storage.domain.*
 import java.io.IOException
 
 class ContentAddressableStorage(
@@ -76,6 +76,7 @@ class ContentAddressableStorage(
         return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
             val response = client.request<HttpResponse>("$gatewayNodeUrl$BASE_PATH/$cid") {
                 method = HttpMethod.Get
+                parameter("bucketId", bucketId)
             }
 
             if (HttpStatusCode.OK != response.status) {

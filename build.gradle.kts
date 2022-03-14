@@ -22,6 +22,7 @@ subprojects {
 
     apply(plugin = "kotlin")
     apply(plugin = "maven")
+    apply(plugin = "idea")
     apply(plugin = "docker-compose")
 
     afterEvaluate {
