@@ -9,7 +9,8 @@ services:
       - 'HTTP_ADDRESS=http://localhost:8090'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
-    ports:
+      - 'TEST_ENABLED=true'
+ports:
       - '8090:8090'
   ddc-gateway-node:
     container_name: 'ddc-gateway-node'
@@ -19,7 +20,7 @@ services:
       - 'HTTP_ADDRESS=http://localhost:8080'
       - 'LOG_LEVEL=debug'
       - 'LOG_JSON_FORMAT=false'
-      - 'STORAGE_NODE_URL=http://ddc-storage-node:8090'
+      - 'TEST_ENABLED=true'      
     ports:
       - '8080:8080'
     depends_on:
