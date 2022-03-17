@@ -3,7 +3,7 @@ version: "3"
 services:
   ddc-storage-node:
     container_name: 'ddc-storage-node'
-    image: 'cerebellumnetwork/ddc-storage-node:v1.0.0-prototype'
+    image: 'cerebellumnetwork/ddc-storage-node:dev-latest'
     environment:
       - 'HTTP_PORT=8090'
       - 'HTTP_ADDRESS=http://localhost:8090'
@@ -13,7 +13,7 @@ services:
       - '8090:8090'
   ddc-gateway-node:
     container_name: 'ddc-gateway-node'
-    image: 'cerebellumnetwork/ddc-gateway-node:v1.0.0-prototype'
+    image: 'cerebellumnetwork/ddc-gateway-node:dev-latest'
     environment:
       - 'HTTP_PORT=8080'
       - 'HTTP_ADDRESS=http://localhost:8080'
