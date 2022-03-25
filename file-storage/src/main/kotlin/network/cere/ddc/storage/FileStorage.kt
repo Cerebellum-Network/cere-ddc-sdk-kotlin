@@ -14,7 +14,6 @@ import network.cere.ddc.storage.config.FileStorageConfig
 import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.PieceUri
-import network.cere.ddc.storage.domain.Tag
 import network.cere.ddc.storage.file.ChunkData
 import network.cere.ddc.storage.file.readToChannel
 import network.cere.ddc.storage.file.writeFromChannel
@@ -32,7 +31,7 @@ class FileStorage(
     private val caStorage =
         ContentAddressableStorage(scheme, gatewayNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
 
-    suspend fun upload(bucketId: Long, file: Path, tags: List<Tag>): PieceUri = coroutineScope {
+    suspend fun upload(bucketId: Long, file: Path): PieceUri = coroutineScope {
         val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
         val indexedBytes = indexBytes(channelBytes)
         val linksSet = ConcurrentSkipListSet<Pair<Long, Link>>(Comparator.comparingLong { it.first })
@@ -60,7 +59,7 @@ class FileStorage(
         jobs.forEach { it.join() }
         val links = linksSet.map { it.second }
 
-        caStorage.store(bucketId, Piece(file.name.toByteArray(), tags, links))
+        caStorage.store(bucketId, Piece(name.toByteArray(), links = links))
     }
 
     suspend fun read(bucketId: Long, cid: String): ByteArray {
