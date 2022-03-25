@@ -38,7 +38,10 @@ class FileStorage(
         val linksSet = ConcurrentSkipListSet<Pair<Long, Link>>(Comparator.comparingLong { it.first })
         val name = file.name
 
+        //Connect bytes channel with file
         launch { file.readToChannel(fileStorageConfig.chunkSizeInBytes, channelBytes) }
+
+        //Upload pieces and create link object
         val jobs = (0 until fileStorageConfig.parallel).map {
             launch {
                 indexedBytes.consumeEach {
@@ -82,6 +85,7 @@ class FileStorage(
                 return@coroutineScope channel
             }
 
+            //Download pieces and send data with position to byte channel
             (0 until fileStorageConfig.parallel).map {
                 launch {
                     readTaskChannel.consumeEach { task ->
@@ -97,6 +101,7 @@ class FileStorage(
                 }
             }
 
+            //Calculate piece data postion in file and send to task channel
             headPiece.links.fold(0L) { position, link ->
                 readTaskChannel.send(ReadTask(position, link))
                 position + link.size
