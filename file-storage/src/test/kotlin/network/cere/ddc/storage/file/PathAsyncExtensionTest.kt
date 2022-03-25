@@ -10,11 +10,10 @@ import java.nio.file.Paths
 
 class PathAsyncExtensionTest {
 
-    private val path = Paths.get("src", "test", "resources", "test.txt")
-
     @Test
     fun `Read file`(): Unit = runBlocking {
         //given
+        val path = Paths.get("src", "test", "resources", "test.txt")
         val byteChannel = Channel<ByteArray>()
 
         //when

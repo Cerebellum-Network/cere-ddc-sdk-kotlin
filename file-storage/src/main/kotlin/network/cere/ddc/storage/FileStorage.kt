@@ -48,8 +48,7 @@ class FileStorage(
                     linksSet.add(
                         it.first to Link(
                             cid = pieceUri.cid,
-                            size = it.second.size.toLong(),
-                            name = "$name-${it.first}"
+                            size = it.second.size.toLong()
                         )
                     )
                 }
@@ -62,29 +61,23 @@ class FileStorage(
         caStorage.store(bucketId, Piece(name.toByteArray(), links = links))
     }
 
-    suspend fun read(bucketId: Long, cid: String): ByteArray {
-        return readToChannel(bucketId, cid).toList()
+    suspend fun read(bucketId: Long, cid: String): ByteArray = coroutineScope {
+        readToChannel(bucketId, cid).toList()
             .asSequence()
             .sortedBy { it.position }
             .fold(byteArrayOf()) { arr, value -> arr + value.data }
     }
 
-    suspend fun download(bucketId: Long, cid: String, file: Path) {
+    suspend fun download(bucketId: Long, cid: String, file: Path): Unit = coroutineScope {
         file.writeFromChannel(readToChannel(bucketId, cid))
     }
 
-    private suspend fun readToChannel(bucketId: Long, cid: String): ReceiveChannel<ChunkData> =
-        coroutineScope {
-            val channel = Channel<ChunkData>(fileStorageConfig.parallel)
+    private fun CoroutineScope.readToChannel(bucketId: Long, cid: String): ReceiveChannel<ChunkData> {
+        val channel = Channel<ChunkData>(fileStorageConfig.parallel)
+        launch {
             val readTaskChannel = Channel<ReadTask>(UNLIMITED)
             val headPiece = caStorage.read(bucketId, cid)
 
-            if (headPiece.links.isEmpty()) {
-                channel.send(ChunkData(0, headPiece.data))
-                return@coroutineScope channel
-            }
-
-            //Download pieces and send data with position to byte channel
             (0 until fileStorageConfig.parallel).map {
                 launch {
                     readTaskChannel.consumeEach { task ->
@@ -96,18 +89,19 @@ class FileStorage(
 
                         channel.send(ChunkData(task.position, piece.data))
                     }
-
                 }
             }
 
-            //Calculate piece data postion in file and send to task channel
             headPiece.links.fold(0L) { position, link ->
                 readTaskChannel.send(ReadTask(position, link))
                 position + link.size
             }
 
-            return@coroutineScope channel
-        }
+            readTaskChannel.close()
+        }.invokeOnCompletion { channel.close(it) }
+
+        return channel
+    }
 
     private fun CoroutineScope.indexBytes(channel: ReceiveChannel<ByteArray>): ReceiveChannel<Pair<Long, ByteArray>> {
         val result = Channel<Pair<Long, ByteArray>>()
