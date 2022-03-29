@@ -40,6 +40,9 @@ class ContentAddressableStorage(
             .setBucketId(bucketId)
             .setData(ByteString.copyFrom(piece.data))
             .addAllTags(piece.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
+            .addAllLinks(piece.links.map {
+                Storage.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
+            })
             .build()
 
         val pieceAsBytes = pbPiece.toByteArray()
@@ -87,10 +90,7 @@ class ContentAddressableStorage(
 
             val pbSignedPiece = Storage.SignedPiece.parseFrom(response.receive<ByteArray>())
 
-            return Piece(
-                data = pbSignedPiece.piece.data.toByteArray(),
-                tags = pbSignedPiece.piece.tagsList.map { Tag(it.key, it.value) }
-            )
+            return parsePiece(pbSignedPiece.piece)
         }
     }
 
@@ -114,13 +114,11 @@ class ContentAddressableStorage(
 
             val pbSearchResult = Storage.SearchResult.parseFrom(response.receive<ByteArray>())
 
-            return SearchResult(
-                pieces = pbSearchResult.signedPiecesList.map { sp ->
-                    Piece(
-                        data = sp.piece.data.toByteArray(),
-                        tags = sp.piece.tagsList.map { Tag(it.key, it.value) }
-                    )
-                })
+            return SearchResult(pieces = pbSearchResult.signedPiecesList.map { sp -> parsePiece(sp.piece) })
         }
     }
+
+    fun parsePiece(pbPiece: Storage.Piece) = Piece(data = pbPiece.data.toByteArray(),
+        tags = pbPiece.tagsList.map { Tag(it.key, it.value) },
+        links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) })
 }
