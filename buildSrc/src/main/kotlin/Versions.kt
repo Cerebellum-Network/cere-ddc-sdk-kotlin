@@ -14,4 +14,5 @@ object Versions {
     val protobufPlugin = "0.8.18"
     val protobuf = "3.19.4"
     val cid = "v1.3.1"
+    val polkaj = "0.3.0"
 }
