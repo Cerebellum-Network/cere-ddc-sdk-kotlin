@@ -22,8 +22,11 @@ fun main() {
     runBlocking {
         kotlin.runCatching {
             client.connect()
-            client.some()
-        }.onFailure { it.printStackTrace() }.onSuccess { println(it) }
+            client.callTransaction("0aeb2379") {
+                writeAsList("testingKotlinFresh1".toByteArray())
+            }
+        }.onFailure { it.printStackTrace() }
+            .onSuccess { println(it) }
         println("DONE")
         client.close()
     }
