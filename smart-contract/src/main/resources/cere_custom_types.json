@@ -1,0 +1,50 @@
+{
+  "ChainId": "u8",
+  "DepositNonce": "u64",
+  "ResourceId": "[u8; 32]",
+  "ProposalStatus": {
+    "type": "enum",
+    "value_list": [
+      "Initiated",
+      "Approved",
+      "Rejected"
+    ]
+  },
+  "ProposalVotes": {
+    "type": "structure",
+    "type_mapping": [
+      [
+        "votes_for",
+        "Vec<AccountId>"
+      ],
+      [
+        "votes_against",
+        "Vec<AccountId>"
+      ],
+      [
+        "status",
+        "ProposalStatus"
+      ],
+      [
+        "expiry",
+        "BlockNumber"
+      ]
+    ]
+  },
+  "TokenId": "u256",
+  "Erc721Token": {
+    "type": "structure",
+    "type_mapping": [
+      [
+        "id",
+        "TokenId"
+      ],
+      [
+        "metadata",
+        "Vec<u8>"
+      ]
+    ]
+  },
+  "Address": "IndicesLookupSource",
+  "LookupSource": "IndicesLookupSource"
+}

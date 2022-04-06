@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.mapping
+package network.cere.ddc.contract.blockchain.mapping
 
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleReader

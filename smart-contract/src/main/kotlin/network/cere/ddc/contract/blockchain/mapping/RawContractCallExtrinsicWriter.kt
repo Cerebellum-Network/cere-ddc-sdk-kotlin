@@ -1,9 +1,9 @@
-package network.cere.ddc.contract.mapping
+package network.cere.ddc.contract.blockchain.mapping
 
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.ScaleWriter
 import io.emeraldpay.polkaj.scaletypes.Extrinsic
-import network.cere.ddc.contract.model.RawContractCallExtrinsic
+import network.cere.ddc.contract.client.RawContractCallExtrinsic
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 

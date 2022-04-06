@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.model
+package network.cere.ddc.contract.client
 
 import io.emeraldpay.polkaj.scaletypes.ExtrinsicCall
 import io.emeraldpay.polkaj.types.Address
