@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.blockchain.mapping
+package network.cere.ddc.contract.blockchain.mapping.writer
 
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.ScaleWriter

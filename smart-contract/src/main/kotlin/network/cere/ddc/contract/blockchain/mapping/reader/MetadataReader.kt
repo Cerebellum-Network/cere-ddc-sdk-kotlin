@@ -1,10 +1,11 @@
-package network.cere.ddc.contract.blockchain.mapping
+package network.cere.ddc.contract.blockchain.mapping.reader
 
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleReader
 import io.emeraldpay.polkaj.scale.reader.EnumReader
 import io.emeraldpay.polkaj.scale.reader.ListReader
 import io.emeraldpay.polkaj.scale.reader.UnionReader
+import network.cere.ddc.contract.blockchain.mapping.readNullable
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.ChainMetadata.*
 

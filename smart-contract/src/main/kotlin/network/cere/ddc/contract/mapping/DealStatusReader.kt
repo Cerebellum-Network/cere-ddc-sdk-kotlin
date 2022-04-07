@@ -2,7 +2,7 @@ package network.cere.ddc.contract.mapping
 
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleReader
-import network.cere.ddc.contract.blockchain.mapping.UInt64Reader
+import network.cere.ddc.contract.blockchain.mapping.reader.UInt64Reader
 import network.cere.ddc.contract.model.DealStatus
 import java.time.Instant
 import java.time.ZoneId

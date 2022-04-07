@@ -21,24 +21,31 @@ import io.emeraldpay.polkaj.tx.ExtrinsicSigner
 import io.emeraldpay.polkaj.types.Address
 import io.emeraldpay.polkaj.types.ByteData
 import io.emeraldpay.polkaj.types.Hash256
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
-import network.cere.ddc.contract.blockchain.mapping.ExtrinsicEventReader
-import network.cere.ddc.contract.blockchain.mapping.MetadataReader
-import network.cere.ddc.contract.blockchain.mapping.RawContractCallExtrinsicWriter
-import network.cere.ddc.contract.blockchain.mapping.RawContractCallWriter
+import kotlinx.coroutines.withContext
+import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
+import network.cere.ddc.contract.blockchain.mapping.SkipReaderGenerator
+import network.cere.ddc.contract.blockchain.mapping.checkError
+import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
+import network.cere.ddc.contract.blockchain.mapping.reader.EventReader
+import network.cere.ddc.contract.blockchain.mapping.reader.MetadataReader
+import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallExtrinsicWriter
+import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.ContractCallResponse
-import network.cere.ddc.contract.blockchain.model.EventRecord
 import network.cere.ddc.contract.config.ContractConfig
 import network.cere.ddc.core.extension.hexToBytes
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
+import java.nio.file.Files
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class SmartContractClient(config: ContractConfig) : AutoCloseable {
+//ToDo add logging
+class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
 
     private companion object {
         const val CONTRACT_CALL_READ_COMMAND = "contracts_call"
@@ -52,13 +59,8 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
         const val MAX_GAS_LIMIT_READ = 4999999999999L
     }
 
-    private val api = PolkadotWsApi
-        .newBuilder()
-        .objectMapper(jacksonObjectMapper().registerModule(PolkadotModule()))
-        .connectTo(config.wsUrl)
-        .build()
-
-    private val signer = ExtrinsicSigner(RawContractCallWriter)
+    private val jackson = jacksonObjectMapper().registerModule(PolkadotModule())
+    private val api = PolkadotWsApi.newBuilder().objectMapper(jackson).connectTo(config.wsUrl).build()
 
     private val contractAddress = Address.from(config.contractAddress)
     private val keyPair = KeyPair.fromPrivateKey(config.privateKeyHex.hexToBytes())
@@ -67,6 +69,7 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
         Address.from(SS58Codec.getInstance().encode(SS58Type.Network.SUBSTRATE, keyPair.publicKey))
 
     private lateinit var metadata: ChainMetadata
+    private lateinit var skipReaderGenerator: SkipReaderGenerator
 
     suspend fun connect(): Boolean {
         val connected = api.connect().await()
@@ -76,8 +79,20 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
                 .let { ScaleCodecReader(it.bytes).read(MetadataReader) }
         }
 
+        skipReaderGenerator = withContext(Dispatchers.IO) {
+            config.typeFiles.fold(jackson.createObjectNode()) { node, path ->
+                jackson.readerForUpdating(node).readValue(jackson.readTree(Files.readAllBytes(path)))
+            }
+        }.let { SkipReaderGenerator(it) }
+
         return connected
     }
+
+    fun test(data: ByteArray) =
+        ScaleCodecReader(data).read(ListReader(EventReader(ContractCallEventReader, metadata, skipReaderGenerator)))
+            .filter { it.id == 2L }
+            .mapNotNull { it.event }
+            .first()
 
     override fun close() {
         api.close()
@@ -90,19 +105,13 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
             gasLimit = MAX_GAS_LIMIT_READ
             inputData = ByteData(writerToBytes(hashHex, paramsApply))
         }.let { api.execute(RpcCall.create(ContractCallResponse::class.java, CONTRACT_CALL_READ_COMMAND, it)) }
-            .thenApply {
-                val reader = ScaleCodecReader(it.success?.data?.hexToBytes())
-                val resultCode = reader.readUByte()
-
-                if (resultCode == 0) {
-                    reader
-                } else {
-                    TODO("Implement error parsing by code")
-                }
-            }.await()
+            .await().let { ScaleCodecReader(it.success?.data?.hexToBytes()).checkError() }
 
     //ToDO implement more flexible gasLimit/autoprediction(right now always MAX gasLimit)
-    suspend fun callTransaction(hashHex: String, paramsApply: ScaleCodecWriter.() -> Unit): EventRecord {
+    suspend fun callTransaction(
+        hashHex: String,
+        paramsApply: ScaleCodecWriter.() -> Unit
+    ): ScaleCodecReader {
         val data = writerToBytes(hashHex, paramsApply)
         val call = RawContractCallExtrinsic(
             data = data,
@@ -116,7 +125,9 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
         val byteData = ByteData(writerToBytes { write(RawContractCallExtrinsicWriter, extrinsic) })
         val blockHash = sendExtrinsic(byteData)
 
-        return findEventResult(blockHash, byteData)
+        val contractCallEvent = findEventResult(ContractCallEventReader, blockHash, byteData)
+
+        return ScaleCodecReader(contractCallEvent.data).checkError()
     }
 
     //ToDo do we need timeout?
@@ -140,21 +151,23 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
     }
 
     //ToDo do we need timeout?
-    //ToDo event as subscription sign on request for improve speed
-    private suspend fun findEventResult(blockHash: String, byteData: ByteData): EventRecord {
+    //ToDo event as subscription sign on request for improving speed
+    private suspend fun <T> findEventResult(
+        reader: IndexedScaleReader<T>,
+        blockHash: String,
+        byteData: ByteData
+    ): T {
         val index = api.execute(StandardCommands.getInstance().getBlock(Hash256.from(blockHash)))
             .thenApply { it.block.extrinsics.indexOf(byteData) }
-        val events = api.execute(
-            RpcCall.create(
-                ByteData::class.java,
-                STATE_GET_STORAGE_READ_COMMAND,
-                SYSTEM_EVENTS_KEY_STATE_STORAGE,
-                blockHash
-            )
-        ).await()
 
-        return ScaleCodecReader(events.bytes).read(ListReader(ExtrinsicEventReader))
-            .first { it.id == index.await().toLong() }
+        val eventsCall = RpcCall
+            .create(ByteData::class.java, STATE_GET_STORAGE_READ_COMMAND, SYSTEM_EVENTS_KEY_STATE_STORAGE, blockHash)
+        val eventsData = api.execute(eventsCall).await().bytes
+
+        return ScaleCodecReader(eventsData).read(ListReader(EventReader(reader, metadata, skipReaderGenerator)))
+            .filter { it.id == index.await().toLong() }
+            .mapNotNull { it.event }
+            .first()
     }
 
     private fun buildExtrinsic(
@@ -163,7 +176,9 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
     ): Extrinsic<RawContractCallExtrinsic> {
         val transactionInfo = Extrinsic.TransactionInfo().apply {
             sender = operationalWallet
-            signature = Extrinsic.SR25519Signature(signer.sign(context, rawContractCallExtrinsic, keyPair))
+            signature = Extrinsic.SR25519Signature(
+                ExtrinsicSigner(RawContractCallWriter).sign(context, rawContractCallExtrinsic, keyPair)
+            )
             era = context.eraHeight.toInt()
             nonce = context.nonce
             tip = context.tip
@@ -181,3 +196,4 @@ class SmartContractClient(config: ContractConfig) : AutoCloseable {
             buffer.toByteArray()
         }.let { hash.hexToBytes() + it }
 }
+
