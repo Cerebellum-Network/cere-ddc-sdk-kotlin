@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 data class ContractConfig(
     val wsUrl: String,
-    val contractAddress: String,
+    val contractAddressHex: String,
     val privateKeyHex: String,
     val decimals: Int = 15,
     val typeFiles: List<Path> = listOf(

@@ -2,7 +2,7 @@ package network.cere.ddc.contract.blockchain.mapping.writer
 
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.ScaleWriter
-import network.cere.ddc.contract.client.RawContractCallExtrinsic
+import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
 
 
 object RawContractCallWriter : ScaleWriter<RawContractCallExtrinsic> {

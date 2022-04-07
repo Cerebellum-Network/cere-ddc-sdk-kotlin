@@ -8,7 +8,7 @@ import network.cere.ddc.contract.model.BucketStatus
 object BucketStatusReader : ScaleReader<BucketStatus> {
 
     private val dealStatusesReader = ListReader(DealStatusReader)
-    private val writerIdsReader = ListReader(AccountIdReader)
+    private val writerIdsReader = ListReader(AccountIdScale)
 
     override fun read(reader: ScaleCodecReader) = BucketStatus(
         bucketId = reader.readUint32(),

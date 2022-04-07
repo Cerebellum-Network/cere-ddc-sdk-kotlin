@@ -3,7 +3,7 @@ package network.cere.ddc.contract.blockchain.mapping.writer
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.ScaleWriter
 import io.emeraldpay.polkaj.scaletypes.Extrinsic
-import network.cere.ddc.contract.client.RawContractCallExtrinsic
+import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 

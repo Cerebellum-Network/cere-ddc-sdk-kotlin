@@ -11,7 +11,7 @@ object DealStatusReader : ScaleReader<DealStatus> {
 
     override fun read(reader: ScaleCodecReader) = DealStatus(
         nodeId = reader.readUint32(),
-        extimatedRentEnd = Instant.ofEpochMilli(reader.read(UInt64Reader).toLong()).atZone(ZoneId.systemDefault())
+        estimatedRentEnd = Instant.ofEpochMilli(reader.read(UInt64Reader).toLong()).atZone(ZoneId.systemDefault())
             .toLocalDateTime()
     )
 }

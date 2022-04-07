@@ -11,7 +11,7 @@ object BucketReader : ScaleReader<Bucket> {
     private val listLongReader = ListReader(ScaleCodecReader.UINT32)
 
     override fun read(reader: ScaleCodecReader) = Bucket(
-        ownerId = reader.read(AccountIdReader),
+        ownerId = reader.read(AccountIdScale),
         clusterIds = reader.read(listLongReader),
         dealIds = reader.read(listLongReader),
         bucketParams = reader.readString()

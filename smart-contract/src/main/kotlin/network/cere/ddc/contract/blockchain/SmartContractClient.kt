@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.client
+package network.cere.ddc.contract.blockchain
 
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.fasterxml.jackson.databind.JsonNode
@@ -26,7 +26,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
 import network.cere.ddc.contract.blockchain.mapping.SkipReaderGenerator
-import network.cere.ddc.contract.blockchain.mapping.checkError
 import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.EventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.MetadataReader
@@ -34,6 +33,7 @@ import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallExtrin
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.ContractCallResponse
+import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
 import network.cere.ddc.contract.config.ContractConfig
 import network.cere.ddc.core.extension.hexToBytes
 import java.io.ByteArrayOutputStream
@@ -62,7 +62,7 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
     private val jackson = jacksonObjectMapper().registerModule(PolkadotModule())
     private val api = PolkadotWsApi.newBuilder().objectMapper(jackson).connectTo(config.wsUrl).build()
 
-    private val contractAddress = Address.from(config.contractAddress)
+    private val contractAddress = Address.from(config.contractAddressHex)
     private val keyPair = KeyPair.fromPrivateKey(config.privateKeyHex.hexToBytes())
         .let { Schnorrkel.KeyPair(it.publicKey.toPublicKey(), it.privateKey.toPrivateKey()) }
     private val operationalWallet =
@@ -88,12 +88,6 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
         return connected
     }
 
-    fun test(data: ByteArray) =
-        ScaleCodecReader(data).read(ListReader(EventReader(ContractCallEventReader, metadata, skipReaderGenerator)))
-            .filter { it.id == 2L }
-            .mapNotNull { it.event }
-            .first()
-
     override fun close() {
         api.close()
     }
@@ -105,7 +99,7 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
             gasLimit = MAX_GAS_LIMIT_READ
             inputData = ByteData(writerToBytes(hashHex, paramsApply))
         }.let { api.execute(RpcCall.create(ContractCallResponse::class.java, CONTRACT_CALL_READ_COMMAND, it)) }
-            .await().let { ScaleCodecReader(it.success?.data?.hexToBytes()).checkError() }
+            .await().let { ScaleCodecReader(it.success?.data?.hexToBytes()) }
 
     //ToDO implement more flexible gasLimit/autoprediction(right now always MAX gasLimit)
     suspend fun callTransaction(
@@ -127,7 +121,7 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
 
         val contractCallEvent = findEventResult(ContractCallEventReader, blockHash, byteData)
 
-        return ScaleCodecReader(contractCallEvent.data).checkError()
+        return ScaleCodecReader(contractCallEvent.data)
     }
 
     //ToDo do we need timeout?

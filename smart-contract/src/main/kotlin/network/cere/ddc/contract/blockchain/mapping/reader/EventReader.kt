@@ -38,7 +38,7 @@ class EventReader<T>(
     }
 
     private fun ScaleCodecReader.readEvent(moduleId: Int, eventId: Int): T? {
-        if (moduleId == indexedReader.moduleId && eventId == indexedReader.actionId) {
+        if (moduleId == indexedReader.moduleId && eventId == indexedReader.typeId) {
             return read(indexedReader)
         } else {
             metadata.modules[moduleId].events[eventId].arguments.forEach {
