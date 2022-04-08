@@ -1,9 +1,10 @@
-package network.cere.ddc.contract.mapping
+package network.cere.ddc.contract.mapping.response
 
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleReader
 import network.cere.ddc.contract.blockchain.mapping.BalanceScale
-import network.cere.ddc.contract.model.NodeStatus
+import network.cere.ddc.contract.mapping.AccountIdScale
+import network.cere.ddc.contract.model.response.NodeStatus
 
 object NodeStatusReader : ScaleReader<NodeStatus> {
 

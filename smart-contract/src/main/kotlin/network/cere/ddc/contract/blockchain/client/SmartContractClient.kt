@@ -32,6 +32,7 @@ import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallExtrin
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.ContractCallResponse
+import network.cere.ddc.contract.blockchain.model.EventRecord
 import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
 import network.cere.ddc.core.extension.hexToBytes
 import java.io.ByteArrayOutputStream
@@ -106,9 +107,14 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         val byteData = ByteData(writerToBytes { write(RawContractCallExtrinsicWriter, extrinsic) })
         val blockHash = sendExtrinsic(byteData)
 
-        val contractCallEvent = findEventResult(ContractCallEventReader, blockHash, byteData)
+        val contractCallEvent = findEvents(ContractCallEventReader, blockHash, byteData)
+            .also { events ->
+                events.firstOrNull { it.moduleId == 0 && it.eventId == 0 }
+                    ?: throw RuntimeException("Event was not found. Contract transaction failed")
+            }
+        val eventData = contractCallEvent.mapNotNull { it.event }.firstOrNull()?.data ?: byteArrayOf()
 
-        return ScaleCodecReader(contractCallEvent.data)
+        return ScaleCodecReader(eventData)
     }
 
     //ToDo do we need timeout?
@@ -133,11 +139,12 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
 
     //ToDo do we need timeout?
     //ToDo event as subscription sign on request for improving speed
-    private suspend fun <T> findEventResult(
+    private suspend fun <T> findEvents(
         reader: IndexedScaleReader<T>,
         blockHash: String,
         byteData: ByteData
-    ): T {
+    ): List<EventRecord<T>> {
+        println(blockHash)
         val index = api.execute(StandardCommands.getInstance().getBlock(Hash256.from(blockHash)))
             .thenApply { it.block.extrinsics.indexOf(byteData) }
 
@@ -147,8 +154,6 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
 
         return ScaleCodecReader(eventsData).read(ListReader(EventReader(reader, metadata, skipReaderGenerator)))
             .filter { it.id == index.await().toLong() }
-            .mapNotNull { it.event }
-            .first()
     }
 
     private fun buildExtrinsic(

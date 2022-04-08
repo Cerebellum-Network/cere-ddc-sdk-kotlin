@@ -11,6 +11,7 @@ value class Balance(val value: BigInteger) {
     }
 
     constructor(raw: BigDecimal) : this(raw.multiply(CERE_MULTIPLIER).toBigInteger())
+    constructor(str: String) : this(BigDecimal(str).multiply(CERE_MULTIPLIER).toBigInteger())
 
     fun toDecimal() = BigDecimal(value).divide(CERE_MULTIPLIER)
 

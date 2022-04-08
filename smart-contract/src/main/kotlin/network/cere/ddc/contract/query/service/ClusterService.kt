@@ -5,11 +5,20 @@ import io.emeraldpay.polkaj.scale.writer.ListWriter
 import network.cere.ddc.contract.BucketContractConfig
 import network.cere.ddc.contract.blockchain.client.SmartContractClient
 import network.cere.ddc.contract.blockchain.mapping.checkError
+import network.cere.ddc.contract.blockchain.mapping.writeNullable
 import network.cere.ddc.contract.blockchain.mapping.writeString
 import network.cere.ddc.contract.mapping.AccountIdScale
-import network.cere.ddc.contract.mapping.ClusterStatusReader
-import network.cere.ddc.contract.mapping.ResultListReader
-import network.cere.ddc.contract.model.*
+import network.cere.ddc.contract.mapping.event.ClusterCreatedEventReader
+import network.cere.ddc.contract.mapping.event.ClusterNodeReplacedEventReader
+import network.cere.ddc.contract.mapping.response.ClusterStatusReader
+import network.cere.ddc.contract.mapping.response.ResultListReader
+import network.cere.ddc.contract.model.AccountId
+import network.cere.ddc.contract.model.Balance
+import network.cere.ddc.contract.model.BucketSmartContractError
+import network.cere.ddc.contract.model.event.ClusterCreatedEvent
+import network.cere.ddc.contract.model.event.ClusterNodeReplacedEvent
+import network.cere.ddc.contract.model.response.ClusterStatus
+import network.cere.ddc.contract.model.response.ResultList
 import network.cere.ddc.contract.query.commander.ClusterCommander
 
 class ClusterService(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
@@ -24,30 +33,36 @@ class ClusterService(private val client: SmartContractClient, private val contra
         partitionCount: Long,
         nodeIds: List<Long>,
         clusterParams: String
-    ): Long {
-        val response = client.callTransaction(contractConfig.clusterCreateHash, value.value) {
+    ): ClusterCreatedEvent {
+        val event = client.callTransaction(contractConfig.clusterCreateHash, value.value) {
             write(AccountIdScale, manager)
             writeUint32(partitionCount)
             write(nodeIdsWriter, nodeIds)
             writeString(clusterParams)
         }
 
-        return response.readUint32()
+        return event.read(ClusterCreatedEventReader)
     }
 
     override suspend fun clusterReserveResource(clusterId: Long, amount: Long) {
-        client.callTransaction(contractConfig.clusterReserveResourceHash) {
+        val event = client.callTransaction(contractConfig.clusterReserveResourceHash) {
             writeUint32(clusterId)
             writeUint32(amount)
         }
     }
 
-    override suspend fun clusterReplaceNode(clusterId: Long, partitionId: Long, newNodeId: Long) {
-        client.callTransaction(contractConfig.clusterReplaceNodeHash) {
+    override suspend fun clusterReplaceNode(
+        clusterId: Long,
+        partitionId: Long,
+        newNodeId: Long
+    ): ClusterNodeReplacedEvent {
+        val event = client.callTransaction(contractConfig.clusterReplaceNodeHash) {
             writeUint32(clusterId)
             writeUint32(partitionId)
             writeUint32(newNodeId)
         }
+
+        return event.read(ClusterNodeReplacedEventReader)
     }
 
     override suspend fun clusterGet(clusterId: Long): ClusterStatus {
@@ -66,14 +81,14 @@ class ClusterService(private val client: SmartContractClient, private val contra
         val response = client.call(contractConfig.clusterListHash) {
             writeUint32(offset)
             writeUint32(limit)
-            write(AccountIdScale, filterManagerId)
+            writeNullable(AccountIdScale, filterManagerId)
         }
 
         return response.read(clusterStatusListReader)
     }
 
     override suspend fun clusterDistributeRevenues(clusterId: Long) {
-        client.callTransaction(contractConfig.clusterDistributeRevenuesHash) {
+        val event = client.callTransaction(contractConfig.clusterDistributeRevenuesHash) {
             writeUint32(clusterId)
         }
     }

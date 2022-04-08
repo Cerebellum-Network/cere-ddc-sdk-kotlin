@@ -8,22 +8,26 @@ import network.cere.ddc.contract.query.commander.NodeCommander
 import network.cere.ddc.contract.query.service.BucketService
 import network.cere.ddc.contract.query.service.ClusterService
 import network.cere.ddc.contract.query.service.NodeService
+import java.net.ConnectException
 
-class BucketSmartContract(bucketService: BucketService, clusterService: ClusterService, nodeService: NodeService) :
-    BucketCommander by bucketService, ClusterCommander by clusterService, NodeCommander by nodeService {
+//ToDo make dynamic EventReader and request buider by parsing JSON ABI
+class BucketSmartContract(
+    client: SmartContractClient,
+    bucketContractConfig: BucketContractConfig,
+) : BucketCommander by BucketService(client, bucketContractConfig),
+    ClusterCommander by ClusterService(client, bucketContractConfig),
+    NodeCommander by NodeService(client, bucketContractConfig),
+    AutoCloseable by client {
 
     companion object {
         suspend fun buildAndConnect(
             config: BlockchainConfig,
             bucketContractConfig: BucketContractConfig
         ): BucketSmartContract {
-            val client = SmartContractClient(config).also { it.connect() }
+            val client =
+                SmartContractClient(config).also { if (!it.connect()) throw ConnectException("Could not connect to blockchain: '${config.wsUrl}'") }
 
-            val bucketService = BucketService(client, bucketContractConfig)
-            val clusterService = ClusterService(client, bucketContractConfig)
-            val nodeService = NodeService(client, bucketContractConfig)
-
-            return BucketSmartContract(bucketService, clusterService, nodeService)
+            return BucketSmartContract(client, bucketContractConfig)
         }
     }
 }

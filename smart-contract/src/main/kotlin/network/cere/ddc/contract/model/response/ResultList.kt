@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.model
+package network.cere.ddc.contract.model.response
 
 data class ResultList<T>(
     val totalLength: Long,
