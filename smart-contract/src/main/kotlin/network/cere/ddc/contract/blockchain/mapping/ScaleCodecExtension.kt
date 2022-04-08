@@ -17,11 +17,12 @@ inline fun <reified T> ScaleCodecReader.readNullable(scaleReader: ScaleReader<T>
     }
 }
 
-fun ScaleCodecReader.checkError() = also {
-    val resultCode = readUByte()
+inline fun <reified T : Enum<*>> ScaleCodecReader.checkError(values: Array<T>) = also {
+    val code = it.readUByte()
 
-    if (resultCode != 0) {
-        throw SmartContractException(resultCode, "Contract data has exception")
+    if (code > 0) {
+        val typeError = values[code - 1]
+        throw SmartContractException(typeError, "Contract data has exception")
     }
 }
 

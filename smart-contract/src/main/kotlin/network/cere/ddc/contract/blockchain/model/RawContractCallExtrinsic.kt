@@ -8,5 +8,5 @@ data class RawContractCallExtrinsic(
     val data: ByteArray,
     val contractAddress: Address,
     val gasLimit: BigInteger,
-    val value: BigInteger = BigInteger.ZERO
+    val value: BigInteger
 ) : ExtrinsicCall()

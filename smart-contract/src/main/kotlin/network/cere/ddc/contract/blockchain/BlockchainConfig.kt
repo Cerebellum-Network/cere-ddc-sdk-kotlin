@@ -1,13 +1,12 @@
-package network.cere.ddc.contract.config
+package network.cere.ddc.contract.blockchain
 
 import java.io.File
 import java.nio.file.Path
 
-data class ContractConfig(
+data class BlockchainConfig(
     val wsUrl: String,
     val contractAddressHex: String,
     val privateKeyHex: String,
-    val decimals: Int = 15,
     val typeFiles: List<Path> = listOf(
         Path.of(object {}.javaClass.getResource("${File.separatorChar}default_types.json")!!.path),
         Path.of(object {}.javaClass.getResource("${File.separatorChar}cere_custom_types.json")!!.path)

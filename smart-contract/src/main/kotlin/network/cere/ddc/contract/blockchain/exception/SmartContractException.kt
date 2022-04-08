@@ -1,3 +1,3 @@
 package network.cere.ddc.contract.blockchain.exception
 
-class SmartContractException(val index: Int, msg: String) : RuntimeException(msg)
+class SmartContractException(val typeError: Enum<*>, msg: String) : RuntimeException(msg)

@@ -5,8 +5,8 @@ import network.cere.ddc.contract.model.Balance
 
 interface AdminCommander {
 
-    fun adminGet(): AccountId
-    fun adminChange(newAdmin: AccountId)
-    fun adminWithdraw(amount: Balance)
+    suspend fun adminGet(): AccountId
+    suspend fun adminChange(newAdmin: AccountId)
+    suspend fun adminWithdraw(amount: Balance)
 
 }

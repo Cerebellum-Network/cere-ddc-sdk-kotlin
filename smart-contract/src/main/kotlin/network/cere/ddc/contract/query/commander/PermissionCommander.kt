@@ -1,10 +1,10 @@
 package network.cere.ddc.contract.query.commander
 
 import network.cere.ddc.contract.model.AccountId
+import network.cere.ddc.contract.model.Balance
 
 interface PermissionCommander {
 
-    //payable
-    fun permTrust(trustee: AccountId)
-    fun permHasTrust(trustee: AccountId, trustGiver: AccountId): Boolean
+    suspend fun permTrust(value: Balance, trustee: AccountId)
+    suspend fun permHasTrust(trustee: AccountId, trustGiver: AccountId): Boolean
 }

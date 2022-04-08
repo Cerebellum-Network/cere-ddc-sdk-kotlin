@@ -1,12 +1,13 @@
 package network.cere.ddc.contract.query.commander
 
 import network.cere.ddc.contract.model.AccountId
+import network.cere.ddc.contract.model.Balance
 import network.cere.ddc.contract.model.BucketStatus
 import network.cere.ddc.contract.model.ResultList
 
 interface BucketCommander {
 
-    suspend fun bucketCreate(bucketParams: String, clusterId: Long): Long
+    suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long): Long
     suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long)
     suspend fun bucketSettlePayment(bucketId: Long)
     suspend fun bucketGet(bucketId: Long): BucketStatus

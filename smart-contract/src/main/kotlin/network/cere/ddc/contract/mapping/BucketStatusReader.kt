@@ -16,4 +16,16 @@ object BucketStatusReader : ScaleReader<BucketStatus> {
         writerIds = reader.read(writerIdsReader),
         dealStatuses = reader.read(dealStatusesReader)
     )
+
+    private object BucketReader : ScaleReader<BucketStatus.Bucket> {
+
+        val listLongReader = ListReader(ScaleCodecReader.UINT32)
+
+        override fun read(reader: ScaleCodecReader) = BucketStatus.Bucket(
+            ownerId = reader.read(AccountIdScale),
+            clusterIds = reader.read(listLongReader),
+            dealIds = reader.read(listLongReader),
+            bucketParams = reader.readString()
+        )
+    }
 }

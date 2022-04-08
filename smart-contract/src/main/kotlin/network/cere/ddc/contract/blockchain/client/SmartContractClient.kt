@@ -1,14 +1,12 @@
-package network.cere.ddc.contract.blockchain
+package network.cere.ddc.contract.blockchain.client
 
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.emeraldpay.polkaj.api.RpcCall
 import io.emeraldpay.polkaj.api.StandardCommands
 import io.emeraldpay.polkaj.api.SubscribeCall
 import io.emeraldpay.polkaj.apiws.PolkadotWsApi
 import io.emeraldpay.polkaj.json.ContractCallRequestJson
-import io.emeraldpay.polkaj.json.jackson.PolkadotModule
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.reader.ListReader
@@ -24,6 +22,7 @@ import io.emeraldpay.polkaj.types.Hash256
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
+import network.cere.ddc.contract.blockchain.BlockchainConfig
 import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
 import network.cere.ddc.contract.blockchain.mapping.SkipReaderGenerator
 import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
@@ -34,7 +33,6 @@ import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.ContractCallResponse
 import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
-import network.cere.ddc.contract.config.ContractConfig
 import network.cere.ddc.core.extension.hexToBytes
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
@@ -45,22 +43,9 @@ import kotlin.coroutines.suspendCoroutine
 
 
 //ToDo add logging
-class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
+class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable {
 
-    private companion object {
-        const val CONTRACT_CALL_READ_COMMAND = "contracts_call"
-        const val STATE_GET_STORAGE_READ_COMMAND = "state_getStorage"
-        const val SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND = "author_submitAndWatchExtrinsic"
-        const val UNSUBSCRIBE_TRANSACTION_EVENTS_COMMAND = "author_unwatchExtrinsic"
-
-        const val SYSTEM_EVENTS_KEY_STATE_STORAGE = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
-
-        val MAX_GAS_LIMIT_TRANSACTION: BigInteger = BigInteger.valueOf(1280000000000)
-        const val MAX_GAS_LIMIT_READ = 4999999999999L
-    }
-
-    private val jackson = jacksonObjectMapper().registerModule(PolkadotModule())
-    private val api = PolkadotWsApi.newBuilder().objectMapper(jackson).connectTo(config.wsUrl).build()
+    private val api = PolkadotWsApi.newBuilder().objectMapper(JACKSON).connectTo(config.wsUrl).build()
 
     private val contractAddress = Address.from(config.contractAddressHex)
     private val keyPair = KeyPair.fromPrivateKey(config.privateKeyHex.hexToBytes())
@@ -80,8 +65,8 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
         }
 
         skipReaderGenerator = withContext(Dispatchers.IO) {
-            config.typeFiles.fold(jackson.createObjectNode()) { node, path ->
-                jackson.readerForUpdating(node).readValue(jackson.readTree(Files.readAllBytes(path)))
+            config.typeFiles.fold(JACKSON.createObjectNode()) { node, path ->
+                JACKSON.readerForUpdating(node).readValue(JACKSON.readTree(Files.readAllBytes(path)))
             }
         }.let { SkipReaderGenerator(it) }
 
@@ -104,13 +89,15 @@ class SmartContractClient(private val config: ContractConfig) : AutoCloseable {
     //ToDO implement more flexible gasLimit/autoprediction(right now always MAX gasLimit)
     suspend fun callTransaction(
         hashHex: String,
+        value: BigInteger = BigInteger.ZERO,
         paramsApply: ScaleCodecWriter.() -> Unit
     ): ScaleCodecReader {
         val data = writerToBytes(hashHex, paramsApply)
         val call = RawContractCallExtrinsic(
             data = data,
             contractAddress = contractAddress,
-            gasLimit = MAX_GAS_LIMIT_TRANSACTION
+            gasLimit = MAX_GAS_LIMIT_TRANSACTION,
+            value = value
         )
 
         //ToDo probably we don't have to execute it on every transaction
