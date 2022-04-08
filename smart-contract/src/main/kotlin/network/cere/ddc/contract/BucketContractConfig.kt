@@ -20,5 +20,18 @@ data class BucketContractConfig(
     //Node
     val nodeCreateHash: String = "b77ac1bb",
     val nodeGetHash: String = "847f3997",
-    val nodeListHash: String = "423286d6"
+    val nodeListHash: String = "423286d6",
+
+    //Admin
+    val adminGetHash: String = "1261dae1",
+    val adminChangeHash: String = "12292787",
+    val adminWithdrawHash: String = "2f6e0868",
+
+    //Billing
+    val accountDepositHash: String = "c311af62",
+    val accountGetHash: String = "1d4220fa",
+
+    //Permission
+    val permTrustHash: String = "32e7de43",
+    val permHasTrustHash: String = "c50c38f7",
 )

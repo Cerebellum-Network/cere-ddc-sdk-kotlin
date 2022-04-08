@@ -61,7 +61,7 @@ class BucketService(private val client: SmartContractClient, private val contrac
     }
 
     override suspend fun bucketSettlePayment(bucketId: Long) {
-        val event = client.callTransaction(contractConfig.bucketSettlePaymentHash) {
+        client.callTransaction(contractConfig.bucketSettlePaymentHash) {
             writeUint32(bucketId)
         }
     }

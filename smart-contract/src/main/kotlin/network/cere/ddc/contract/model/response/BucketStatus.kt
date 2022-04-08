@@ -1,7 +1,7 @@
 package network.cere.ddc.contract.model.response
 
 import network.cere.ddc.contract.model.AccountId
-import network.cere.ddc.contract.model.Balance
+import network.cere.ddc.contract.model.Schedule
 import java.time.LocalDateTime
 
 data class BucketStatus(
@@ -23,8 +23,4 @@ data class BucketStatus(
         val schedule: Schedule,
     )
 
-    data class Schedule(
-        val rate: Balance,
-        val offset: Balance
-    )
 }

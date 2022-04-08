@@ -45,7 +45,7 @@ class ClusterService(private val client: SmartContractClient, private val contra
     }
 
     override suspend fun clusterReserveResource(clusterId: Long, amount: Long) {
-        val event = client.callTransaction(contractConfig.clusterReserveResourceHash) {
+        client.callTransaction(contractConfig.clusterReserveResourceHash) {
             writeUint32(clusterId)
             writeUint32(amount)
         }
@@ -88,7 +88,7 @@ class ClusterService(private val client: SmartContractClient, private val contra
     }
 
     override suspend fun clusterDistributeRevenues(clusterId: Long) {
-        val event = client.callTransaction(contractConfig.clusterDistributeRevenuesHash) {
+        client.callTransaction(contractConfig.clusterDistributeRevenuesHash) {
             writeUint32(clusterId)
         }
     }

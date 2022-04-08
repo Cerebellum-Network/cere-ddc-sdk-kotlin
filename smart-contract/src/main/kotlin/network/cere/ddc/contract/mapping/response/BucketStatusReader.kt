@@ -3,7 +3,6 @@ package network.cere.ddc.contract.mapping.response
 import io.emeraldpay.polkaj.scale.ScaleCodecReader
 import io.emeraldpay.polkaj.scale.ScaleReader
 import io.emeraldpay.polkaj.scale.reader.ListReader
-import network.cere.ddc.contract.blockchain.mapping.BalanceScale
 import network.cere.ddc.contract.blockchain.mapping.reader.UInt64Reader
 import network.cere.ddc.contract.mapping.AccountIdScale
 import network.cere.ddc.contract.model.response.BucketStatus
@@ -38,14 +37,6 @@ object BucketStatusReader : ScaleReader<BucketStatus> {
         override fun read(reader: ScaleCodecReader) = BucketStatus.Flow(
             from = reader.read(AccountIdScale),
             schedule = reader.read(ScheduleReader)
-        )
-    }
-
-    private object ScheduleReader : ScaleReader<BucketStatus.Schedule> {
-
-        override fun read(reader: ScaleCodecReader) = BucketStatus.Schedule(
-            rate = reader.read(BalanceScale),
-            offset = reader.read(BalanceScale),
         )
     }
 

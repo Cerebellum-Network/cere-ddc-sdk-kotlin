@@ -78,7 +78,7 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         api.close()
     }
 
-    suspend fun call(hashHex: String, paramsApply: ScaleCodecWriter.() -> Unit): ScaleCodecReader =
+    suspend fun call(hashHex: String, paramsApply: ScaleCodecWriter.() -> Unit = {}): ScaleCodecReader =
         ContractCallRequestJson().apply {
             origin = operationalWallet
             dest = contractAddress
@@ -91,7 +91,7 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
     suspend fun callTransaction(
         hashHex: String,
         value: BigInteger = BigInteger.ZERO,
-        paramsApply: ScaleCodecWriter.() -> Unit
+        paramsApply: ScaleCodecWriter.() -> Unit = {}
     ): ScaleCodecReader {
         val data = writerToBytes(hashHex, paramsApply)
         val call = RawContractCallExtrinsic(
