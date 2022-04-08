@@ -144,7 +144,6 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         blockHash: String,
         byteData: ByteData
     ): List<EventRecord<T>> {
-        println(blockHash)
         val index = api.execute(StandardCommands.getInstance().getBlock(Hash256.from(blockHash)))
             .thenApply { it.block.extrinsics.indexOf(byteData) }
 
