@@ -6,7 +6,7 @@
 
 build.gradle.kts
 
-```groovy
+```kotlin
 repositories {
     maven("https://jitpack.io")
     ivy("https://github.com") {
