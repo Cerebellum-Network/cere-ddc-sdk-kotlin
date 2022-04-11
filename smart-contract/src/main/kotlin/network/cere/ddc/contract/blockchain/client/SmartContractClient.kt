@@ -36,6 +36,7 @@ import network.cere.ddc.contract.blockchain.model.EventRecord
 import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
 import network.cere.ddc.core.extension.hexToBytes
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.math.BigInteger
 import java.nio.file.Files
 import kotlin.coroutines.resume
@@ -46,6 +47,8 @@ import kotlin.coroutines.suspendCoroutine
 //ToDo add logging
 class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable {
 
+    private val defaultTypeFiles =
+        listOf("${File.separator}default_types.json", "${File.separator}cere_custom_types.json")
     private val api = PolkadotWsApi.newBuilder().objectMapper(JACKSON).connectTo(config.wsUrl).build()
 
     private val contractAddress = Address.from(config.contractAddressHex)
@@ -66,7 +69,13 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         }
 
         skipReaderGenerator = withContext(Dispatchers.IO) {
-            config.typeFiles.fold(JACKSON.createObjectNode()) { node, path ->
+            val defaultTypeNode = defaultTypeFiles.fold(JACKSON.createObjectNode()) { node, file ->
+                object {}.javaClass.getResourceAsStream(file)
+                    ?.use { JACKSON.readTree(it) }
+                    ?.let { JACKSON.readerForUpdating(node).readValue(it) }
+            }
+
+            config.typeFiles.fold(defaultTypeNode) { node, path ->
                 JACKSON.readerForUpdating(node).readValue(JACKSON.readTree(Files.readAllBytes(path)))
             }
         }.let { SkipReaderGenerator(it) }
