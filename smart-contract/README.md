@@ -34,5 +34,10 @@ val config = ContractConfig(
 val contractConfig = BucketContractConfig()
 val smartContract = BucketSmartContract.buildAndConnect(config, contractConfig)
 
-val bucketStatus: BucketStatus = smartContract.bucketGet(0L)
+//10 CERE tokens
+val value = Balance(BigDecimal("10"))
+    
+val bucketEvent: BucketCreatedEvent = smartContract.bucketCreate(value, "{\"someBucketParam\": 123}", clusterId)
+val bucketStatus: BucketStatus = smartContract.bucketGet(bucketEvent.bucketId)
+
 ```
