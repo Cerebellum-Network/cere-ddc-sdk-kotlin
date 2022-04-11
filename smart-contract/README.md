@@ -1,5 +1,28 @@
 # Smart Contract
 
+## Usage
+
+### Gradle
+
+build.gradle.kts
+
+```groovy
+repositories {
+    maven("https://jitpack.io")
+    ivy("https://github.com") {
+        patternLayout {
+            artifact("[organisation]/releases/download/v[revision]/[module]-[revision].jar")
+            setM2compatible(true)
+        }
+        metadataSources { artifact() }
+    }
+}
+
+dependencies {
+    api("com.github.Cerebellum-Network.cere-ddc-sdk-kotlin:smart-contract:1.1.0.Prototype")
+}
+```
+
 ## Example
 
 ```kotlin
