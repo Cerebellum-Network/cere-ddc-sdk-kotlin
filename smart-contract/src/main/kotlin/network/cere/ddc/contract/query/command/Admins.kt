@@ -1,9 +1,9 @@
-package network.cere.ddc.contract.query.commander
+package network.cere.ddc.contract.query.command
 
 import network.cere.ddc.contract.model.AccountId
 import network.cere.ddc.contract.model.Balance
 
-interface AdminCommander {
+interface Admins {
 
     suspend fun adminGet(): AccountId
     suspend fun adminChange(newAdmin: AccountId)

@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.commander
+package network.cere.ddc.contract.query.command
 
 import network.cere.ddc.contract.model.AccountId
 import network.cere.ddc.contract.model.Balance
@@ -7,7 +7,7 @@ import network.cere.ddc.contract.model.event.ClusterNodeReplacedEvent
 import network.cere.ddc.contract.model.response.ClusterStatus
 import network.cere.ddc.contract.model.response.ResultList
 
-interface ClusterCommander {
+interface Clusters {
 
     suspend fun clusterCreate(value: Balance, manager: AccountId, partitionCount: Long, nodeIds: List<Long>, clusterParams: String): ClusterCreatedEvent
     suspend fun clusterReserveResource(clusterId: Long, amount: Long)

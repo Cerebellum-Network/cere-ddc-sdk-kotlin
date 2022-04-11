@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.service
+package network.cere.ddc.contract.query.contract
 
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.writer.ListWriter
@@ -19,10 +19,10 @@ import network.cere.ddc.contract.model.event.ClusterCreatedEvent
 import network.cere.ddc.contract.model.event.ClusterNodeReplacedEvent
 import network.cere.ddc.contract.model.response.ClusterStatus
 import network.cere.ddc.contract.model.response.ResultList
-import network.cere.ddc.contract.query.commander.ClusterCommander
+import network.cere.ddc.contract.query.command.Clusters
 
-class ClusterService(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
-    ClusterCommander {
+class ContractClusters(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
+    Clusters {
 
     private val nodeIdsWriter = ListWriter(ScaleCodecWriter.ULONG32)
     private val clusterStatusListReader = ResultListReader(ClusterStatusReader)

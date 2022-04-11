@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.service
+package network.cere.ddc.contract.query.contract
 
 import network.cere.ddc.contract.BucketContractConfig
 import network.cere.ddc.contract.blockchain.client.SmartContractClient
@@ -17,10 +17,10 @@ import network.cere.ddc.contract.model.event.BucketAllocatedEvent
 import network.cere.ddc.contract.model.event.BucketCreatedEvent
 import network.cere.ddc.contract.model.response.BucketStatus
 import network.cere.ddc.contract.model.response.ResultList
-import network.cere.ddc.contract.query.commander.BucketCommander
+import network.cere.ddc.contract.query.command.Buckets
 
-class BucketService(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
-    BucketCommander {
+class ContractBuckets(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
+    Buckets {
 
     private val bucketStatusListReader = ResultListReader(BucketStatusReader)
 

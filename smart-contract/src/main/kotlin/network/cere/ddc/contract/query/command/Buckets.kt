@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.commander
+package network.cere.ddc.contract.query.command
 
 import network.cere.ddc.contract.model.AccountId
 import network.cere.ddc.contract.model.Balance
@@ -7,7 +7,7 @@ import network.cere.ddc.contract.model.event.BucketCreatedEvent
 import network.cere.ddc.contract.model.response.BucketStatus
 import network.cere.ddc.contract.model.response.ResultList
 
-interface BucketCommander {
+interface Buckets {
 
     suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long): BucketCreatedEvent
     suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long): BucketAllocatedEvent

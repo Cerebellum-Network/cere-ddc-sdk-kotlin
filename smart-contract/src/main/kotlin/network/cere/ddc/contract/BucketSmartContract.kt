@@ -2,21 +2,22 @@ package network.cere.ddc.contract
 
 import network.cere.ddc.contract.blockchain.BlockchainConfig
 import network.cere.ddc.contract.blockchain.client.SmartContractClient
-import network.cere.ddc.contract.query.commander.*
-import network.cere.ddc.contract.query.service.*
+import network.cere.ddc.contract.query.command.*
+import network.cere.ddc.contract.query.contract.*
 import java.net.ConnectException
 
 //ToDo make dynamic EventReader and request builder by parsing JSON ABI
 class BucketSmartContract(
     client: SmartContractClient,
     bucketContractConfig: BucketContractConfig,
-) : BucketCommander by BucketService(client, bucketContractConfig),
-    ClusterCommander by ClusterService(client, bucketContractConfig),
-    NodeCommander by NodeService(client, bucketContractConfig),
-    AdminCommander by AdminService(client, bucketContractConfig),
-    PermissionCommander by PermissionService(client, bucketContractConfig),
-    BillingCommander by BillingService(client, bucketContractConfig),
-    AutoCloseable by client {
+    contractBuckets: ContractBuckets = ContractBuckets(client, bucketContractConfig),
+    contractClusters: ContractClusters = ContractClusters(client, bucketContractConfig),
+    contractNodes: ContractNodes = ContractNodes(client, bucketContractConfig),
+    contractAdmins: ContractAdmins = ContractAdmins(client, bucketContractConfig),
+    contractPermissions: ContractPermissions = ContractPermissions(client, bucketContractConfig),
+    contractBillings: ContractBillings = ContractBillings(client, bucketContractConfig)
+) : Buckets by contractBuckets, Clusters by contractClusters, Nodes by contractNodes, Admins by contractAdmins,
+    Permissions by contractPermissions, Billings by contractBillings, AutoCloseable by client {
 
     companion object {
         suspend fun buildAndConnect(

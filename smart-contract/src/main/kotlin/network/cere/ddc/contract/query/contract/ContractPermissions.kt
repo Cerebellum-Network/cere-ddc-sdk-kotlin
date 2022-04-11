@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.service
+package network.cere.ddc.contract.query.contract
 
 import network.cere.ddc.contract.BucketContractConfig
 import network.cere.ddc.contract.blockchain.client.SmartContractClient
@@ -6,10 +6,10 @@ import network.cere.ddc.contract.blockchain.mapping.BalanceScale
 import network.cere.ddc.contract.mapping.AccountIdScale
 import network.cere.ddc.contract.model.AccountId
 import network.cere.ddc.contract.model.Balance
-import network.cere.ddc.contract.query.commander.PermissionCommander
+import network.cere.ddc.contract.query.command.Permissions
 
-class PermissionService(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
-    PermissionCommander {
+class ContractPermissions(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
+    Permissions {
 
     override suspend fun permTrust(value: Balance, trustee: AccountId) {
         client.callTransaction(contractConfig.permTrustHash) {

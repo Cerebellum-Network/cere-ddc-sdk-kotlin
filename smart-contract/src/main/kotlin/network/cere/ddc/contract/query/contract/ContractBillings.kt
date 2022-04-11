@@ -1,4 +1,4 @@
-package network.cere.ddc.contract.query.service
+package network.cere.ddc.contract.query.contract
 
 import network.cere.ddc.contract.BucketContractConfig
 import network.cere.ddc.contract.blockchain.client.SmartContractClient
@@ -11,10 +11,10 @@ import network.cere.ddc.contract.model.Balance
 import network.cere.ddc.contract.model.BucketSmartContractError
 import network.cere.ddc.contract.model.event.DepositEvent
 import network.cere.ddc.contract.model.response.Account
-import network.cere.ddc.contract.query.commander.BillingCommander
+import network.cere.ddc.contract.query.command.Billings
 
-class BillingService(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
-    BillingCommander {
+class ContractBillings(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
+    Billings {
 
     override suspend fun accountDeposit(value: Balance): DepositEvent {
         val event = client.callTransaction(contractConfig.accountDepositHash)
