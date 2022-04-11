@@ -1,5 +1,6 @@
 package network.cere.ddc.contract.blockchain.client
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.emeraldpay.polkaj.json.jackson.PolkadotModule
 import java.math.BigInteger
@@ -16,5 +17,7 @@ internal const val SYSTEM_EVENTS_KEY_STATE_STORAGE =
 internal const val MAX_GAS_LIMIT_READ = 4999999999999L
 internal val MAX_GAS_LIMIT_TRANSACTION: BigInteger = BigInteger.valueOf(1280000000000)
 
-internal val JACKSON = jacksonObjectMapper().registerModule(PolkadotModule())
+internal val JACKSON = jacksonObjectMapper()
+    .registerModule(PolkadotModule())
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 

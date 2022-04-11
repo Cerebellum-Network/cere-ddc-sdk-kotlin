@@ -1,6 +1,5 @@
 package network.cere.ddc.contract.blockchain.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class ContractCallResponse(
@@ -9,7 +8,6 @@ data class ContractCallResponse(
     @JsonProperty("error")
     val error: Error?
 ) {
-    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Success(
         @JsonProperty("status")
         val status: Int,
@@ -19,7 +17,6 @@ data class ContractCallResponse(
         val gasConsumed: Long
     )
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Error(
         @JsonProperty("code")
         val code: Int,
