@@ -6,7 +6,7 @@ import io.emeraldpay.polkaj.scale.reader.EnumReader
 import io.emeraldpay.polkaj.scale.reader.ListReader
 import io.emeraldpay.polkaj.types.Hash256
 import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
-import network.cere.ddc.contract.blockchain.mapping.SkipReaderGenerator
+import network.cere.ddc.contract.blockchain.mapping.reader.skip.SkipReaderGenerator
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
 import network.cere.ddc.contract.blockchain.model.EventRecord
 
@@ -42,7 +42,7 @@ class EventReader<T>(
             return read(indexedReader)
         } else {
             metadata.modules[moduleId].events[eventId].arguments.forEach {
-                read(skipReaderGenerator.generateReader(it))
+                read(skipReaderGenerator.generateScaleReader(it))
             }
             return null
         }

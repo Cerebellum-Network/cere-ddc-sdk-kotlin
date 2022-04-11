@@ -24,10 +24,10 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import network.cere.ddc.contract.blockchain.BlockchainConfig
 import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
-import network.cere.ddc.contract.blockchain.mapping.SkipReaderGenerator
 import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.EventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.MetadataReader
+import network.cere.ddc.contract.blockchain.mapping.reader.skip.SkipReaderGenerator
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallExtrinsicWriter
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
 import network.cere.ddc.contract.blockchain.model.ChainMetadata
