@@ -8,7 +8,7 @@ import java.net.ConnectException
 
 //ToDo make dynamic EventReader and request builder by parsing JSON ABI
 class BucketSmartContract(
-    client: SmartContractClient,
+    private val client: SmartContractClient,
     bucketContractConfig: BucketContractConfig,
     contractBuckets: ContractBuckets = ContractBuckets(client, bucketContractConfig),
     contractClusters: ContractClusters = ContractClusters(client, bucketContractConfig),
@@ -24,10 +24,15 @@ class BucketSmartContract(
             config: BlockchainConfig,
             bucketContractConfig: BucketContractConfig
         ): BucketSmartContract {
-            val client =
-                SmartContractClient(config).also { if (!it.connect()) throw ConnectException("Could not connect to blockchain: '${config.wsUrl}'") }
-
-            return BucketSmartContract(client, bucketContractConfig)
+            return BucketSmartContract(config, bucketContractConfig)
+                .also { if (!it.connect()) throw ConnectException("Could not connect to blockchain: '${config.wsUrl}'") }
         }
     }
+
+    constructor(
+        config: BlockchainConfig,
+        bucketContractConfig: BucketContractConfig
+    ) : this(SmartContractClient(config), bucketContractConfig)
+
+    suspend fun connect() = client.connect()
 }
