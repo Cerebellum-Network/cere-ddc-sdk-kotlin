@@ -26,8 +26,8 @@ internal class FileStorageIT {
         val fileBytes = Files.readAllBytes(path)
 
         //when
-        val uri = testSubject.upload(0L, path)
-        val data = testSubject.read(0L, uri.cid)
+        val uri = testSubject.upload(1L, path)
+        val data = testSubject.read(1L, uri.cid)
 
         //then
         data shouldBe fileBytes
@@ -41,8 +41,8 @@ internal class FileStorageIT {
             //Files.createTempFile("file_storage_download_test", null).toAbsolutePath()
 
         //when
-        val uri = testSubject.upload(1L, path)
-        testSubject.download(1L, uri.cid, newFile)
+        val uri = testSubject.upload(2L, path)
+        testSubject.download(2L, uri.cid, newFile)
 
         //then
         Files.readAllBytes(newFile) shouldBe fileBytes
