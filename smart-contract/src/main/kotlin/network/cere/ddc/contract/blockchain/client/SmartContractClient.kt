@@ -19,9 +19,9 @@ import io.emeraldpay.polkaj.tx.ExtrinsicSigner
 import io.emeraldpay.polkaj.types.Address
 import io.emeraldpay.polkaj.types.ByteData
 import io.emeraldpay.polkaj.types.Hash256
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.withContext
 import network.cere.ddc.contract.blockchain.BlockchainConfig
 import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
 import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
@@ -42,9 +42,6 @@ import java.io.File
 import java.math.BigInteger
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 
 class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable {
@@ -135,30 +132,26 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         return ScaleCodecReader(eventData)
     }
 
-    //ToDo do we need timeout?
-    private suspend fun sendExtrinsic(data: ByteData): String {
+    private suspend fun sendExtrinsic(data: ByteData) = coroutineScope<String> {
         val subscribeCall = SubscribeCall.create(
             JsonNode::class.java,
             SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND,
             UNSUBSCRIBE_TRANSACTION_EVENTS_COMMAND,
             data
         )
+        val blockHashChannel = Channel<String>(1)
+        val subscription =
+            api.subscribe(subscribeCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await()
 
-        return suspendCoroutine { continuation ->
-            api.subscribe(subscribeCall)
-                .thenApply { sub ->
-                    sub.handler { event ->
-                        event.result.get("finalized")?.asText()
-                            ?.also { blockHash -> sub.use { continuation.resume(blockHash) } }
-                    }
 
-                    sub
-                }
-                .orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS)
-                .handle { sub, ex ->
-                    sub.close()
-                    continuation.resumeWithException(ex)
-                }
+        subscription.handler { event ->
+            event.result.get("finalized")?.asText()?.also { blockHash ->
+                subscription.use { launch { blockHashChannel.send(blockHash) } }
+            }
+        }
+
+        withTimeout(config.timeout.toMillis()) {
+            blockHashChannel.receive()
         }
     }
 
@@ -182,7 +175,6 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
     }
 
     private suspend fun buildExtrinsic(contractExtrinsicCall: ContractExtrinsicCall): Extrinsic<ContractExtrinsicCall> {
-        //ToDo probably we don't have to execute it on every transaction
         val context = ExtrinsicContext.newAutoBuilder(operationalWallet, api).await().build()
 
         val transactionInfo = Extrinsic.TransactionInfo().apply {
