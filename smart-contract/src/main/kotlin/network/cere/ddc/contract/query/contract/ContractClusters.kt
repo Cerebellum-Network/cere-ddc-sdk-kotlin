@@ -34,7 +34,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         nodeIds: List<Long>,
         clusterParams: String
     ): ClusterCreatedEvent {
-        val event = client.callTransaction(contractConfig.clusterCreateHash, value.value) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_create"), value.value) {
             write(AccountIdScale, manager)
             writeUint32(partitionCount)
             write(nodeIdsWriter, nodeIds)
@@ -45,7 +45,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
     }
 
     override suspend fun clusterReserveResource(clusterId: Long, amount: Long) {
-        client.callTransaction(contractConfig.clusterReserveResourceHash) {
+        client.callTransaction(contractConfig.getMethodHashByName("cluster_reserve_resource")) {
             writeUint32(clusterId)
             writeUint32(amount)
         }
@@ -56,7 +56,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         partitionId: Long,
         newNodeId: Long
     ): ClusterNodeReplacedEvent {
-        val event = client.callTransaction(contractConfig.clusterReplaceNodeHash) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_replace_node")) {
             writeUint32(clusterId)
             writeUint32(partitionId)
             writeUint32(newNodeId)
@@ -66,7 +66,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
     }
 
     override suspend fun clusterGet(clusterId: Long): ClusterStatus {
-        val response = client.call(contractConfig.clusterGetHash) {
+        val response = client.call(contractConfig.getMethodHashByName("cluster_get")) {
             writeUint32(clusterId)
         }
 
@@ -78,7 +78,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         limit: Long,
         filterManagerId: AccountId?
     ): ResultList<ClusterStatus> {
-        val response = client.call(contractConfig.clusterListHash) {
+        val response = client.call(contractConfig.getMethodHashByName("cluster_list")) {
             writeUint32(offset)
             writeUint32(limit)
             writeNullable(AccountIdScale, filterManagerId)
@@ -88,7 +88,7 @@ class ContractClusters(private val client: SmartContractClient, private val cont
     }
 
     override suspend fun clusterDistributeRevenues(clusterId: Long) {
-        client.callTransaction(contractConfig.clusterDistributeRevenuesHash) {
+        client.callTransaction(contractConfig.getMethodHashByName("cluster_distribute_revenues")) {
             writeUint32(clusterId)
         }
     }

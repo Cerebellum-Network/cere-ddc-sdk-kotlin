@@ -12,14 +12,14 @@ class ContractPermissions(private val client: SmartContractClient, private val c
     Permissions {
 
     override suspend fun permTrust(value: Balance, trustee: AccountId) {
-        client.callTransaction(contractConfig.permTrustHash) {
+        client.callTransaction(contractConfig.getMethodHashByName("perm_trust")) {
             write(BalanceScale, value)
             write(AccountIdScale, trustee)
         }
     }
 
     override suspend fun permHasTrust(trustee: AccountId, trustGiver: AccountId): Boolean {
-        val result = client.call(contractConfig.permHasTrustHash) {
+        val result = client.call(contractConfig.getMethodHashByName("perm_has_trust")) {
             write(AccountIdScale, trustee)
             write(AccountIdScale, trustGiver)
         }

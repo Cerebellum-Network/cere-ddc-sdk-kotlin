@@ -17,13 +17,13 @@ class ContractBillings(private val client: SmartContractClient, private val cont
     Billings {
 
     override suspend fun accountDeposit(value: Balance): DepositEvent {
-        val event = client.callTransaction(contractConfig.accountDepositHash)
+        val event = client.callTransaction(contractConfig.getMethodHashByName("account_deposit"))
 
         return event.read(DepositEventReader)
     }
 
     override suspend fun accountGet(accountId: AccountId): Account {
-        val response = client.call(contractConfig.accountGetHash) {
+        val response = client.call(contractConfig.getMethodHashByName("account_get")) {
             write(AccountIdScale, accountId)
         }
 

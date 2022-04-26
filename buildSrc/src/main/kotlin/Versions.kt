@@ -15,4 +15,6 @@ object Versions {
     val protobuf = "3.19.4"
     val cid = "v1.3.1"
     val polkaj = "0.3.0"
+    val caffeine = "3.0.6"
+    val openhft = "0.15"
 }

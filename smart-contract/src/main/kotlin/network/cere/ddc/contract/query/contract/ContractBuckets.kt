@@ -25,7 +25,7 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
     private val bucketStatusListReader = ResultListReader(BucketStatusReader)
 
     override suspend fun bucketGet(bucketId: Long): BucketStatus {
-        val response = client.call(contractConfig.bucketGetHash) {
+        val response = client.call(contractConfig.getMethodHashByName("bucket_get")) {
             writeUint32(bucketId)
         }
 
@@ -33,7 +33,7 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
     }
 
     override suspend fun bucketList(offset: Long, limit: Long, owner: AccountId?): ResultList<BucketStatus> {
-        val response = client.call(contractConfig.bucketListHash) {
+        val response = client.call(contractConfig.getMethodHashByName("bucket_list")) {
             writeUint32(offset)
             writeUint32(limit)
             writeNullable(AccountIdScale, owner)
@@ -43,7 +43,7 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
     }
 
     override suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long): BucketCreatedEvent {
-        val event = client.callTransaction(contractConfig.bucketCreateHash, value.value) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_create"), value.value) {
             writeString(bucketParams)
             writeUint32(clusterId)
         }
@@ -52,7 +52,7 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
     }
 
     override suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long): BucketAllocatedEvent {
-        val event = client.callTransaction(contractConfig.bucketAllocIntoClusterHash) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_alloc_into_cluster")) {
             writeUint32(bucketId)
             writeUint32(resource)
         }
@@ -61,7 +61,7 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
     }
 
     override suspend fun bucketSettlePayment(bucketId: Long) {
-        client.callTransaction(contractConfig.bucketSettlePaymentHash) {
+        client.callTransaction(contractConfig.getMethodHashByName("bucket_settle_payment")) {
             writeUint32(bucketId)
         }
     }

@@ -6,10 +6,9 @@ import network.cere.ddc.contract.query.command.*
 import network.cere.ddc.contract.query.contract.*
 import java.net.ConnectException
 
-//ToDo make dynamic EventReader and request builder by parsing JSON ABI
 class BucketSmartContract(
     private val client: SmartContractClient,
-    bucketContractConfig: BucketContractConfig,
+    private val bucketContractConfig: BucketContractConfig,
     contractBuckets: ContractBuckets = ContractBuckets(client, bucketContractConfig),
     contractClusters: ContractClusters = ContractClusters(client, bucketContractConfig),
     contractNodes: ContractNodes = ContractNodes(client, bucketContractConfig),
@@ -34,5 +33,8 @@ class BucketSmartContract(
         bucketContractConfig: BucketContractConfig
     ) : this(SmartContractClient(config), bucketContractConfig)
 
-    suspend fun connect() = client.connect()
+    suspend fun connect(): Boolean {
+        bucketContractConfig.init()
+        return client.connect()
+    }
 }
