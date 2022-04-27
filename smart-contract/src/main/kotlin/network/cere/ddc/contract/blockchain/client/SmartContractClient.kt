@@ -23,17 +23,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import network.cere.ddc.contract.blockchain.BlockchainConfig
-import network.cere.ddc.contract.blockchain.mapping.IndexedScaleReader
 import network.cere.ddc.contract.blockchain.mapping.reader.ContractCallEventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.EventReader
 import network.cere.ddc.contract.blockchain.mapping.reader.MetadataReader
 import network.cere.ddc.contract.blockchain.mapping.reader.skip.SkipReaderGenerator
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallExtrinsicWriter
 import network.cere.ddc.contract.blockchain.mapping.writer.RawContractCallWriter
-import network.cere.ddc.contract.blockchain.model.ChainMetadata
-import network.cere.ddc.contract.blockchain.model.ContractCallResponse
-import network.cere.ddc.contract.blockchain.model.ContractExtrinsicCall
-import network.cere.ddc.contract.blockchain.model.EventRecord
+import network.cere.ddc.contract.blockchain.model.*
 import network.cere.ddc.core.extension.hexToBytes
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -96,25 +92,39 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         api.close()
     }
 
-    suspend fun call(hashHex: String, paramsApply: ScaleCodecWriter.() -> Unit = {}): ScaleCodecReader =
+    suspend fun call(
+        hashHex: String,
+        paramsApply: ScaleCodecWriter.() -> Unit = {}
+    ): ScaleCodecReader = ScaleCodecReader(callReadOnly(hashHex, 0L, paramsApply).success?.data?.hexToBytes())
+
+    private suspend fun callReadOnly(hashHex: String, value: Long, paramsApply: ScaleCodecWriter.() -> Unit = {}) =
         ContractCallRequestJson().apply {
             origin = operationalWallet
             dest = contractAddress
             gasLimit = MAX_GAS_LIMIT_READ
             inputData = ByteData(writerToBytes(hashHex, paramsApply))
+            this.value = value
         }.let { api.execute(RpcCall.create(ContractCallResponse::class.java, CONTRACT_CALL_READ_COMMAND, it)) }
-            .await().let { ScaleCodecReader(it.success?.data?.hexToBytes()) }
+            .await()
 
-    //ToDO implement more flexible gasLimit/autoprediction(right now always MAX gasLimit)
     suspend fun callTransaction(
         hashHex: String,
+        predictGasLimit: Boolean,
         value: BigInteger = BigInteger.ZERO,
         paramsApply: ScaleCodecWriter.() -> Unit = {}
     ): ScaleCodecReader {
+        val gasLimit = if (predictGasLimit) {
+            callReadOnly(hashHex, value.toLong(), paramsApply).success?.gasConsumed
+                ?.let { BigInteger.valueOf(it) }
+                ?: throw RuntimeException("Couldn't predict gas limit")
+        } else {
+            MAX_GAS_LIMIT_TRANSACTION
+        }
+
         val call = ContractExtrinsicCall(
             data = writerToBytes(hashHex, paramsApply),
             contractAddress = contractAddress,
-            gasLimit = MAX_GAS_LIMIT_TRANSACTION,
+            gasLimit = gasLimit,
             value = value
         )
 
@@ -122,17 +132,16 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         val byteData = ByteData(writerToBytes { write(RawContractCallExtrinsicWriter, extrinsic) })
         val blockHash = sendExtrinsic(byteData)
 
-        val contractCallEvent = findEvents(ContractCallEventReader, blockHash, byteData)
-            .also { events ->
-                events.firstOrNull { it.moduleId == 0 && it.eventId == 0 }
-                    ?: throw RuntimeException("Event was not found. Contract transaction failed")
-            }
+        val contractCallEvent = findEvents(blockHash, byteData).also { events ->
+            events.firstOrNull { it.moduleId == 0 && it.eventId == 0 }
+                ?: throw RuntimeException("Event was not found. Contract transaction failed")
+        }
         val eventData = contractCallEvent.mapNotNull { it.event }.firstOrNull()?.data ?: byteArrayOf()
 
         return ScaleCodecReader(eventData)
     }
 
-    private suspend fun sendExtrinsic(data: ByteData) = coroutineScope<String> {
+    private suspend fun sendExtrinsic(data: ByteData) = coroutineScope {
         val subscribeCall = SubscribeCall.create(
             JsonNode::class.java,
             SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND,
@@ -143,34 +152,29 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         val subscription =
             api.subscribe(subscribeCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await()
 
+        subscription.use {
+            subscription.handler { event ->
+                event.result.get("finalized")?.asText()
+                    ?.also { blockHash -> launch { blockHashChannel.send(blockHash) } }
+            }
 
-        subscription.handler { event ->
-            event.result.get("finalized")?.asText()?.also { blockHash ->
-                subscription.use { launch { blockHashChannel.send(blockHash) } }
+            withTimeout(config.timeout.toMillis()) {
+                blockHashChannel.receive()
             }
         }
 
-        withTimeout(config.timeout.toMillis()) {
-            blockHashChannel.receive()
-        }
     }
 
-    //ToDo event as subscription sign on request for improving speed
-    private suspend fun <T> findEvents(
-        reader: IndexedScaleReader<T>,
-        blockHash: String,
-        byteData: ByteData
-    ): List<EventRecord<T>> {
+    private suspend fun findEvents(blockHash: String, byteData: ByteData): List<EventRecord<ContractCallEvent>> {
         val index = api.execute(StandardCommands.getInstance().getBlock(Hash256.from(blockHash)))
             .thenApply { it.block.extrinsics.indexOf(byteData) }
             .orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS)
-
-        val eventsCall = RpcCall
+        val eventsData = RpcCall
             .create(ByteData::class.java, STATE_GET_STORAGE_READ_COMMAND, SYSTEM_EVENTS_KEY_STATE_STORAGE, blockHash)
-        val eventsData =
-            api.execute(eventsCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await().bytes
+            .let { api.execute(it).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await().bytes }
 
-        return ScaleCodecReader(eventsData).read(ListReader(EventReader(reader, metadata, skipReaderGenerator)))
+        return ScaleCodecReader(eventsData)
+            .read(ListReader(EventReader(ContractCallEventReader, metadata, skipReaderGenerator)))
             .filter { it.id == index.await().toLong() }
     }
 
@@ -179,9 +183,8 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
 
         val transactionInfo = Extrinsic.TransactionInfo().apply {
             sender = operationalWallet
-            signature = Extrinsic.SR25519Signature(
-                ExtrinsicSigner(RawContractCallWriter).sign(context, contractExtrinsicCall, keyPair)
-            )
+            signature = Extrinsic
+                .SR25519Signature(ExtrinsicSigner(RawContractCallWriter).sign(context, contractExtrinsicCall, keyPair))
             era = context.eraHeight.toInt()
             nonce = context.nonce
             tip = context.tip

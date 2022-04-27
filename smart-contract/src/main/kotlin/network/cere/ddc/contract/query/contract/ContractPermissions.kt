@@ -11,8 +11,8 @@ import network.cere.ddc.contract.query.command.Permissions
 class ContractPermissions(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
     Permissions {
 
-    override suspend fun permTrust(value: Balance, trustee: AccountId) {
-        client.callTransaction(contractConfig.getMethodHashByName("perm_trust")) {
+    override suspend fun permTrust(value: Balance, trustee: AccountId, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("perm_trust"), predictGasLimit) {
             write(BalanceScale, value)
             write(AccountIdScale, trustee)
         }

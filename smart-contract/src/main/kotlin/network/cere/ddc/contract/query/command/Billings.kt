@@ -7,6 +7,6 @@ import network.cere.ddc.contract.model.response.Account
 
 interface Billings {
 
-    suspend fun accountDeposit(value: Balance): DepositEvent
+    suspend fun accountDeposit(value: Balance, predictGasLimit: Boolean = false): DepositEvent
     suspend fun accountGet(accountId: AccountId): Account
 }

@@ -17,14 +17,14 @@ class ContractAdmins(private val client: SmartContractClient, private val contra
         return response.read(AccountIdScale)
     }
 
-    override suspend fun adminChange(newAdmin: AccountId) {
-        client.callTransaction(contractConfig.getMethodHashByName("admin_change")) {
+    override suspend fun adminChange(newAdmin: AccountId, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("admin_change"), predictGasLimit) {
             write(AccountIdScale, newAdmin)
         }
     }
 
-    override suspend fun adminWithdraw(amount: Balance) {
-        client.callTransaction(contractConfig.getMethodHashByName("admin_withdraw")) {
+    override suspend fun adminWithdraw(amount: Balance, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("admin_withdraw"), predictGasLimit) {
             write(BalanceScale, amount)
         }
     }

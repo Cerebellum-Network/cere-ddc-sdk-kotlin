@@ -42,8 +42,8 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
         return response.read(bucketStatusListReader)
     }
 
-    override suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long): BucketCreatedEvent {
-        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_create"), value.value) {
+    override suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long, predictGasLimit: Boolean): BucketCreatedEvent {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_create"), predictGasLimit, value.value) {
             writeString(bucketParams)
             writeUint32(clusterId)
         }
@@ -51,8 +51,8 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
         return event.read(BucketCreatedEventReader)
     }
 
-    override suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long): BucketAllocatedEvent {
-        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_alloc_into_cluster")) {
+    override suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long, predictGasLimit: Boolean): BucketAllocatedEvent {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_alloc_into_cluster"), predictGasLimit) {
             writeUint32(bucketId)
             writeUint32(resource)
         }
@@ -60,8 +60,8 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
         return event.read(BucketAllocatedEventReader)
     }
 
-    override suspend fun bucketSettlePayment(bucketId: Long) {
-        client.callTransaction(contractConfig.getMethodHashByName("bucket_settle_payment")) {
+    override suspend fun bucketSettlePayment(bucketId: Long, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("bucket_settle_payment"), predictGasLimit) {
             writeUint32(bucketId)
         }
     }

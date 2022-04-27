@@ -32,9 +32,10 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         manager: AccountId,
         partitionCount: Long,
         nodeIds: List<Long>,
-        clusterParams: String
+        clusterParams: String,
+        predictGasLimit: Boolean
     ): ClusterCreatedEvent {
-        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_create"), value.value) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_create"), predictGasLimit, value.value) {
             write(AccountIdScale, manager)
             writeUint32(partitionCount)
             write(nodeIdsWriter, nodeIds)
@@ -44,8 +45,8 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         return event.read(ClusterCreatedEventReader)
     }
 
-    override suspend fun clusterReserveResource(clusterId: Long, amount: Long) {
-        client.callTransaction(contractConfig.getMethodHashByName("cluster_reserve_resource")) {
+    override suspend fun clusterReserveResource(clusterId: Long, amount: Long, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("cluster_reserve_resource"), predictGasLimit) {
             writeUint32(clusterId)
             writeUint32(amount)
         }
@@ -54,9 +55,10 @@ class ContractClusters(private val client: SmartContractClient, private val cont
     override suspend fun clusterReplaceNode(
         clusterId: Long,
         partitionId: Long,
-        newNodeId: Long
+        newNodeId: Long,
+        predictGasLimit: Boolean
     ): ClusterNodeReplacedEvent {
-        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_replace_node")) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_replace_node"), predictGasLimit) {
             writeUint32(clusterId)
             writeUint32(partitionId)
             writeUint32(newNodeId)
@@ -87,8 +89,8 @@ class ContractClusters(private val client: SmartContractClient, private val cont
         return response.read(clusterStatusListReader)
     }
 
-    override suspend fun clusterDistributeRevenues(clusterId: Long) {
-        client.callTransaction(contractConfig.getMethodHashByName("cluster_distribute_revenues")) {
+    override suspend fun clusterDistributeRevenues(clusterId: Long, predictGasLimit: Boolean) {
+        client.callTransaction(contractConfig.getMethodHashByName("cluster_distribute_revenues"), predictGasLimit) {
             writeUint32(clusterId)
         }
     }

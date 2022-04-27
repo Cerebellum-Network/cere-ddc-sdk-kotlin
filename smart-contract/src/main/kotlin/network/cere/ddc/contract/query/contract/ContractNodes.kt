@@ -27,9 +27,10 @@ class ContractNodes(private val client: SmartContractClient, private val contrac
         value: Balance,
         rentPerMonth: Balance,
         nodeParams: String,
-        capacity: Long
+        capacity: Long,
+        predictGasLimit: Boolean
     ): NodeCreatedEvent {
-        val event = client.callTransaction(contractConfig.getMethodHashByName("node_create"), value.value) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("node_create"), predictGasLimit, value.value) {
             write(BalanceScale, rentPerMonth)
             writeString(nodeParams)
             writeUint32(capacity)
