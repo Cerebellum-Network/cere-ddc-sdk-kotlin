@@ -114,6 +114,7 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         paramsApply: ScaleCodecWriter.() -> Unit = {}
     ): ScaleCodecReader {
         val gasLimit = if (predictGasLimit) {
+            LOGGER.debug("Predict gas limit for function={}", hashHex)
             callReadOnly(hashHex, value.toLong(), paramsApply).success?.gasConsumed
                 ?.let { BigInteger.valueOf(it) }
                 ?: throw RuntimeException("Couldn't predict gas limit")
@@ -149,8 +150,11 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
             data
         )
         val blockHashChannel = Channel<String>(1)
+
+        LOGGER.debug("Execute {} with data={}", SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND, data)
         val subscription =
             api.subscribe(subscribeCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await()
+        LOGGER.debug("Returned subscription {} with data={}", SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND, data)
 
         subscription.use {
             subscription.handler { event ->
@@ -160,18 +164,26 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
 
             withTimeout(config.timeout.toMillis()) {
                 blockHashChannel.receive()
+                    .also { LOGGER.debug("Finalized extrinsic for data={} in block with hash={}", data, it) }
             }
         }
 
     }
 
     private suspend fun findEvents(blockHash: String, byteData: ByteData): List<EventRecord<ContractCallEvent>> {
+        LOGGER.debug("Execute chain_getBlock for block hash={}", blockHash)
         val index = api.execute(StandardCommands.getInstance().getBlock(Hash256.from(blockHash)))
-            .thenApply { it.block.extrinsics.indexOf(byteData) }
+            .thenApply {
+                LOGGER.debug("Response chain_getBlock for block hash={}", blockHash)
+                it.block.extrinsics.indexOf(byteData)
+            }
             .orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS)
+
+        LOGGER.debug("Execute {} for block hash={}", STATE_GET_STORAGE_READ_COMMAND, blockHash)
         val eventsData = RpcCall
             .create(ByteData::class.java, STATE_GET_STORAGE_READ_COMMAND, SYSTEM_EVENTS_KEY_STATE_STORAGE, blockHash)
             .let { api.execute(it).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await().bytes }
+        LOGGER.debug("Response {} for block hash={}", STATE_GET_STORAGE_READ_COMMAND, blockHash)
 
         return ScaleCodecReader(eventsData)
             .read(ListReader(EventReader(ContractCallEventReader, metadata, skipReaderGenerator)))
