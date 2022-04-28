@@ -16,14 +16,14 @@ import network.cere.ddc.contract.query.command.Billings
 class ContractBillings(private val client: SmartContractClient, private val contractConfig: BucketContractConfig) :
     Billings {
 
-    override suspend fun accountDeposit(value: Balance): DepositEvent {
-        val event = client.callTransaction(contractConfig.accountDepositHash)
+    override suspend fun accountDeposit(value: Balance, predictGasLimit: Boolean): DepositEvent {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("account_deposit"), predictGasLimit)
 
         return event.read(DepositEventReader)
     }
 
     override suspend fun accountGet(accountId: AccountId): Account {
-        val response = client.call(contractConfig.accountGetHash) {
+        val response = client.call(contractConfig.getMethodHashByName("account_get")) {
             write(AccountIdScale, accountId)
         }
 

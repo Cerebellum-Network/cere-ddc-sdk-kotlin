@@ -3,13 +3,13 @@ package network.cere.ddc.contract.blockchain.mapping.writer
 import io.emeraldpay.polkaj.scale.ScaleCodecWriter
 import io.emeraldpay.polkaj.scale.ScaleWriter
 import io.emeraldpay.polkaj.scaletypes.Extrinsic
-import network.cere.ddc.contract.blockchain.model.RawContractCallExtrinsic
+import network.cere.ddc.contract.blockchain.model.ContractExtrinsicCall
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 
-object RawContractCallExtrinsicWriter : ScaleWriter<Extrinsic<RawContractCallExtrinsic>> {
+object RawContractCallExtrinsicWriter : ScaleWriter<Extrinsic<ContractExtrinsicCall>> {
 
-    override fun write(wrt: ScaleCodecWriter, value: Extrinsic<RawContractCallExtrinsic>) {
+    override fun write(wrt: ScaleCodecWriter, value: Extrinsic<ContractExtrinsicCall>) {
         val buf = ByteArrayOutputStream()
         val internal = ScaleCodecWriter(buf)
         val type = 132

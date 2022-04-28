@@ -27,9 +27,10 @@ class ContractNodes(private val client: SmartContractClient, private val contrac
         value: Balance,
         rentPerMonth: Balance,
         nodeParams: String,
-        capacity: Long
+        capacity: Long,
+        predictGasLimit: Boolean
     ): NodeCreatedEvent {
-        val event = client.callTransaction(contractConfig.nodeCreateHash, value.value) {
+        val event = client.callTransaction(contractConfig.getMethodHashByName("node_create"), predictGasLimit, value.value) {
             write(BalanceScale, rentPerMonth)
             writeString(nodeParams)
             writeUint32(capacity)
@@ -39,7 +40,7 @@ class ContractNodes(private val client: SmartContractClient, private val contrac
     }
 
     override suspend fun nodeGet(nodeId: Long): NodeStatus {
-        val response = client.call(contractConfig.nodeGetHash) {
+        val response = client.call(contractConfig.getMethodHashByName("node_get")) {
             writeUint32(nodeId)
         }
 
@@ -47,7 +48,7 @@ class ContractNodes(private val client: SmartContractClient, private val contrac
     }
 
     override suspend fun nodeList(offset: Long, limit: Long, filterProviderId: AccountId?): ResultList<NodeStatus> {
-        val response = client.call(contractConfig.nodeListHash) {
+        val response = client.call(contractConfig.getMethodHashByName("node_list")) {
             writeUint32(offset)
             writeUint32(limit)
             writeNullable(AccountIdScale, filterProviderId)

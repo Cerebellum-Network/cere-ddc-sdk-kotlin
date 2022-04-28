@@ -9,9 +9,9 @@ import network.cere.ddc.contract.model.response.ResultList
 
 interface Buckets {
 
-    suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long): BucketCreatedEvent
-    suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long): BucketAllocatedEvent
-    suspend fun bucketSettlePayment(bucketId: Long)
+    suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long, predictGasLimit: Boolean = false): BucketCreatedEvent
+    suspend fun bucketAllocIntoCluster(bucketId: Long, resource: Long, predictGasLimit: Boolean = false): BucketAllocatedEvent
+    suspend fun bucketSettlePayment(bucketId: Long, predictGasLimit: Boolean = false)
     suspend fun bucketGet(bucketId: Long): BucketStatus
     suspend fun bucketList(offset: Long, limit: Long, owner: AccountId? = null): ResultList<BucketStatus>
 

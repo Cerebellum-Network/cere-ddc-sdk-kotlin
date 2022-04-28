@@ -8,7 +8,7 @@ import network.cere.ddc.contract.model.response.ResultList
 
 interface Nodes {
 
-    suspend fun nodeCreate(value: Balance, rentPerMonth: Balance, nodeParams: String, capacity: Long): NodeCreatedEvent
+    suspend fun nodeCreate(value: Balance, rentPerMonth: Balance, nodeParams: String, capacity: Long, predictGasLimit: Boolean = false): NodeCreatedEvent
     suspend fun nodeGet(nodeId: Long): NodeStatus
     suspend fun nodeList(offset: Long, limit: Long, filterProviderId: AccountId? = null): ResultList<NodeStatus>
 

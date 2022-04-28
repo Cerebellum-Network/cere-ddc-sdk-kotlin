@@ -42,7 +42,9 @@ val smartContract = BucketSmartContract.buildAndConnect(config, contractConfig)
 ```kotlin
 //10 CERE tokens
 val value = Balance(BigDecimal("10"))
-    
+
+// Create bucket with using max gas limit. 
+// If you need to predict gas limit before send transaction, set function param predictGasLimit=true, but it makes operation slower
 val bucketEvent: BucketCreatedEvent = smartContract.bucketCreate(value, "{\"replication\": 3}", clusterId)
 val bucketStatus: BucketStatus = smartContract.bucketGet(bucketEvent.bucketId)
 ```

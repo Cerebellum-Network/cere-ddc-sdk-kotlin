@@ -29,8 +29,14 @@ dependencies {
     implementation("emeraldpay.polkaj:polkaj-ss58:${Versions.polkaj}")
     implementation("emeraldpay.polkaj:polkaj-tx:${Versions.polkaj}")
 
+    // Logging
+    implementation("org.slf4j:slf4j-api:${Versions.slf4j}")
+
+    //Cache
+    implementation("com.github.ben-manes.caffeine:caffeine:${Versions.caffeine}")
+
     //Other
     implementation("com.github.komputing.khex:extensions:${Versions.khex}")
     implementation("com.github.yeeco:schnorrkel-java:${Versions.schnorrkel}")
-    implementation("net.openhft:zero-allocation-hashing:0.15")
+    implementation("net.openhft:zero-allocation-hashing:${Versions.openhft}")
 }
