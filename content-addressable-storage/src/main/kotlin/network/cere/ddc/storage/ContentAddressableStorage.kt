@@ -17,7 +17,7 @@ import java.io.IOException
 
 class ContentAddressableStorage(
     private val scheme: Scheme,
-    private val gatewayNodeUrl: String,
+    private val cdnNodeUrl: String,
     private val clientConfig: ClientConfig = ClientConfig(),
     private val cidBuilder: CidBuilder = CidBuilder(),
 ) {
@@ -60,7 +60,7 @@ class ContentAddressableStorage(
             .build()
 
         return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>(gatewayNodeUrl + BASE_PATH) {
+            val response = client.request<HttpResponse>(cdnNodeUrl + BASE_PATH) {
                 method = HttpMethod.Put
                 body = signedPiece.toByteArray()
             }
@@ -77,7 +77,7 @@ class ContentAddressableStorage(
 
     suspend fun read(bucketId: Long, cid: String): Piece {
         return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>("$gatewayNodeUrl$BASE_PATH/$cid") {
+            val response = client.request<HttpResponse>("$cdnNodeUrl$BASE_PATH/$cid") {
                 method = HttpMethod.Get
                 parameter("bucketId", bucketId)
             }
@@ -101,7 +101,7 @@ class ContentAddressableStorage(
             .build()
 
         return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>(gatewayNodeUrl + BASE_PATH) {
+            val response = client.request<HttpResponse>(cdnNodeUrl + BASE_PATH) {
                 method = HttpMethod.Get
                 body = pbQuery.toByteArray()
             }

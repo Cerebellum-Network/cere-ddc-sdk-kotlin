@@ -14,8 +14,8 @@ dependencies {
 
 ```kotlin
 val scheme = Scheme.create(Scheme.SR_25519, privateKey)
-val gatewayNodeUrl = "http://localhost:8080"
-val storage = ContentAddressableStorage(scheme, gatewayNodeUrl)
+val cdnNodeUrl = "http://localhost:8080"
+val storage = ContentAddressableStorage(scheme, cdnNodeUrl)
 ```
 
 ### Store

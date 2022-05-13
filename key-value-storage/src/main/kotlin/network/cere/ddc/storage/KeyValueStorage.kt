@@ -1,13 +1,16 @@
 package network.cere.ddc.storage
 
-import network.cere.ddc.storage.config.ClientConfig
-import network.cere.ddc.storage.domain.*
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.storage.config.ClientConfig
+import network.cere.ddc.storage.domain.Piece
+import network.cere.ddc.storage.domain.PieceUri
+import network.cere.ddc.storage.domain.Query
+import network.cere.ddc.storage.domain.Tag
 
 class KeyValueStorage(
     scheme: Scheme,
-    gatewayNodeUrl: String,
+    cdnNodeUrl: String,
     clientConfig: ClientConfig = ClientConfig(),
     cidBuilder: CidBuilder = CidBuilder(),
 ) {
@@ -16,7 +19,7 @@ class KeyValueStorage(
         const val keyTag = "Key"
     }
 
-    private val caStorage = ContentAddressableStorage(scheme, gatewayNodeUrl, clientConfig, cidBuilder)
+    private val caStorage = ContentAddressableStorage(scheme, cdnNodeUrl, clientConfig, cidBuilder)
 
     suspend fun store(bucketId: Long, key: String, piece: Piece): PieceUri {
         if (piece.tags.any { it.key == keyTag }) {
