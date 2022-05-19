@@ -1,5 +1,6 @@
 package network.cere.ddc.core.signature
 
+import com.debuggor.schnorrkel.sign.ExpansionMode
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.debuggor.schnorrkel.sign.SigningContext
 import network.cere.ddc.core.extension.hexToBytes
@@ -8,7 +9,7 @@ import org.komputing.khex.extensions.toHexString
 
 class Sr25519(privateKeyHex: String) : Scheme {
 
-    private val keyPair = KeyPair.fromPrivateKey(privateKeyHex.hexToBytes())
+    private val keyPair = KeyPair.fromSecretSeed(privateKeyHex.hexToBytes(), ExpansionMode.Ed25519)
 
     override val name = SR_25519
     override val publicKeyHex = keyPair.publicKey.toPublicKey().toHexString()
