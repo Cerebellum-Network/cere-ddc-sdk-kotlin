@@ -7,9 +7,9 @@ import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.core.signature.Scheme.Companion.SR_25519
 import org.komputing.khex.extensions.toHexString
 
-class Sr25519(privateKeyHex: String) : Scheme {
+class Sr25519(seedHex: String) : Scheme {
 
-    private val keyPair = KeyPair.fromSecretSeed(privateKeyHex.hexToBytes(), ExpansionMode.Ed25519)
+    private val keyPair = KeyPair.fromSecretSeed(seedHex.hexToBytes(), ExpansionMode.Ed25519)
 
     override val name = SR_25519
     override val publicKeyHex = keyPair.publicKey.toPublicKey().toHexString()
