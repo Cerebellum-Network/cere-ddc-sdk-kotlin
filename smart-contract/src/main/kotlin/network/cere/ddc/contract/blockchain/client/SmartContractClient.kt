@@ -1,5 +1,6 @@
 package network.cere.ddc.contract.blockchain.client
 
+import com.debuggor.schnorrkel.sign.ExpansionMode
 import com.debuggor.schnorrkel.sign.KeyPair
 import com.fasterxml.jackson.databind.JsonNode
 import io.emeraldpay.polkaj.api.RpcCall
@@ -51,7 +52,7 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
     private val api = PolkadotWsApi.newBuilder().objectMapper(JACKSON).connectTo(config.wsUrl).build()
 
     private val contractAddress = Address.from(config.contractAddressHex)
-    private val keyPair = KeyPair.fromPrivateKey(config.privateKeyHex.hexToBytes())
+    private val keyPair = KeyPair.fromSecretSeed(config.seedHex.hexToBytes(), ExpansionMode.Ed25519)
         .let { Schnorrkel.KeyPair(it.publicKey.toPublicKey(), it.privateKey.toPrivateKey()) }
     private val operationalWallet =
         Address.from(SS58Codec.getInstance().encode(SS58Type.Network.SUBSTRATE, keyPair.publicKey))
