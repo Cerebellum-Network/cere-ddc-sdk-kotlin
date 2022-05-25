@@ -1,5 +1,7 @@
 package network.cere.ddc.core.signature
 
+import network.cere.ddc.core.extension.hexToBytes
+
 sealed interface Scheme {
 
     val name: String
@@ -10,13 +12,20 @@ sealed interface Scheme {
         const val ED_25519 = "ed25519"
         const val SECP_256_K_1 = "secp256k1"
 
-        fun create(scheme: String, seedHex: String): Scheme = when (scheme.lowercase()) {
-            SR_25519 -> Sr25519(seedHex)
-            ED_25519 -> Ed25519(seedHex)
-            SECP_256_K_1 -> Secp256k1(seedHex)
-            else -> throw IllegalArgumentException("Unknown scheme")
+        fun create(scheme: String, seedHex: String): Scheme {
+            val seed = runCatching { seedHex.hexToBytes() }
+                .getOrElse { throw IllegalArgumentException("Couldn't parse to bytes seed hex") }
+                .also { if (it.size != 32) throw IllegalArgumentException("Couldn't create scheme. Seed size should be 32 bytes") }
+
+            return when (scheme.lowercase()) {
+                SR_25519 -> Sr25519(seed)
+                ED_25519 -> Ed25519(seed)
+                SECP_256_K_1 -> Secp256k1(seed)
+                else -> throw IllegalArgumentException("Unknown scheme")
+            }
         }
     }
+
 
     fun sign(data: ByteArray): String
 

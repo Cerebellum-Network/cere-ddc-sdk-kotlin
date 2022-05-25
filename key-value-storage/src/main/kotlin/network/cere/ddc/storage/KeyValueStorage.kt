@@ -1,9 +1,12 @@
 package network.cere.ddc.storage
 
-import network.cere.ddc.storage.config.ClientConfig
-import network.cere.ddc.storage.domain.*
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.storage.config.ClientConfig
+import network.cere.ddc.storage.domain.Piece
+import network.cere.ddc.storage.domain.PieceUri
+import network.cere.ddc.storage.domain.Query
+import network.cere.ddc.storage.domain.Tag
 
 class KeyValueStorage(
     scheme: Scheme,
