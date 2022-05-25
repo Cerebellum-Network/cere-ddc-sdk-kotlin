@@ -105,7 +105,7 @@ class ContentAddressableStorage(
             .addAllTags(query.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
             .build()
 
-        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
+        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException && it !is InvalidObjectException }) {
             val response = sendRequest {
                 method = HttpMethod.Get
                 body = pbQuery.toByteArray()
