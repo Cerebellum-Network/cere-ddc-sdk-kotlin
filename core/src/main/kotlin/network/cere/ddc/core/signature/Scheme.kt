@@ -21,7 +21,7 @@ sealed interface Scheme {
                 SR_25519 -> Sr25519(seed)
                 ED_25519 -> Ed25519(seed)
                 SECP_256_K_1 -> Secp256k1(seed)
-                else -> throw IllegalArgumentException("Unknown scheme")
+                else -> throw IllegalArgumentException("Unknown scheme $scheme")
             }
         }
     }
