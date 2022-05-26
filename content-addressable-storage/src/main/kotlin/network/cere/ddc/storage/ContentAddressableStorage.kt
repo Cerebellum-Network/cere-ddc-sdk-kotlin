@@ -139,6 +139,9 @@ class ContentAddressableStorage(
             block()
         }
         return runCatching { client.request<HttpResponse>(request) }
-            .getOrElse { throw IOException("Couldn't send url='$url', method='${request.method}', error='${it.message}'") }
+            .getOrElse {
+                val error = it.message?.let { ", error='$it'" } ?: ""
+                throw IOException("Couldn't send request url='$url', method='${request.method}$error")
+            }
     }
 }
