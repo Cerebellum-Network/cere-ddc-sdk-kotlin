@@ -15,8 +15,6 @@ internal class Ed25519Test {
 
     @Test
     fun `Valid signature`() {
-        println(Ed25519.toString())
-
         //given
         val message = "test_string"
 
