@@ -14,7 +14,7 @@ import org.komputing.khex.extensions.toNoPrefixHexString
 import org.komputing.khex.model.HexString
 import java.security.SignatureException
 
-class Secp256k1(privateKeyHex: String) : Scheme {
+class Secp256k1(privateKey: ByteArray) : Scheme {
 
     private val keyPair: ECKeyPair
 
@@ -22,10 +22,10 @@ class Secp256k1(privateKeyHex: String) : Scheme {
     override val publicKeyHex: String
 
     init {
-        val privateKey = PrivateKey(privateKeyHex.hexToBytes())
-        val publicKey = publicKeyFromPrivate(privateKey)
+        val privKey = PrivateKey(privateKey)
+        val publicKey = publicKeyFromPrivate(privKey)
 
-        keyPair = ECKeyPair(privateKey, publicKey)
+        keyPair = ECKeyPair(privKey, publicKey)
         publicKeyHex = keyPair.publicKey.toAddress().hex
     }
 
