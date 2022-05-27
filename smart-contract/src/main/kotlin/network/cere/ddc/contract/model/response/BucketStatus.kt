@@ -1,7 +1,6 @@
 package network.cere.ddc.contract.model.response
 
 import network.cere.ddc.contract.model.AccountId
-import network.cere.ddc.contract.model.Schedule
 import java.time.LocalDateTime
 
 data class BucketStatus(
@@ -14,13 +13,6 @@ data class BucketStatus(
     data class Bucket(
         val ownerId: AccountId,
         val clusterId: Long,
-        val flow: Flow,
         val resourceReserved: Long
     )
-
-    data class Flow(
-        val from: AccountId,
-        val schedule: Schedule,
-    )
-
 }

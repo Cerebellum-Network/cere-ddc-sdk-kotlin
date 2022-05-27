@@ -14,6 +14,7 @@ import network.cere.ddc.proto.Storage
 import network.cere.ddc.storage.config.ClientConfig
 import network.cere.ddc.storage.domain.*
 import java.io.IOException
+import java.io.InvalidObjectException
 
 class ContentAddressableStorage(
     private val scheme: Scheme,
@@ -60,14 +61,14 @@ class ContentAddressableStorage(
             .build()
 
         return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>(cdnNodeUrl + BASE_PATH) {
+            val response = sendRequest {
                 method = HttpMethod.Put
                 body = signedPiece.toByteArray()
             }
 
             if (HttpStatusCode.Created != response.status) {
                 throw RuntimeException(
-                    "Failed to store. Response: status='${response.status}' body='${response.receive<String>()}'"
+                    "Failed to store. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
 
@@ -76,19 +77,23 @@ class ContentAddressableStorage(
     }
 
     suspend fun read(bucketId: Long, cid: String): Piece {
-        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>("$cdnNodeUrl$BASE_PATH/$cid") {
+        return retry(
+            clientConfig.retryTimes,
+            clientConfig.retryBackOff,
+            { it is IOException && it !is InvalidObjectException }) {
+            val response = sendRequest(cid) {
                 method = HttpMethod.Get
                 parameter("bucketId", bucketId)
             }
 
             if (HttpStatusCode.OK != response.status) {
                 throw RuntimeException(
-                    "Failed to read. Response: status='${response.status}' body='${response.receive<String>()}'"
+                    "Failed to read. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
 
-            val pbSignedPiece = Storage.SignedPiece.parseFrom(response.receive<ByteArray>())
+            val pbSignedPiece = runCatching { Storage.SignedPiece.parseFrom(response.receive<ByteArray>()) }
+                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
 
             return parsePiece(pbSignedPiece.piece)
         }
@@ -100,25 +105,43 @@ class ContentAddressableStorage(
             .addAllTags(query.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
             .build()
 
-        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException }) {
-            val response = client.request<HttpResponse>(cdnNodeUrl + BASE_PATH) {
+        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException && it !is InvalidObjectException }) {
+            val response = sendRequest {
                 method = HttpMethod.Get
                 body = pbQuery.toByteArray()
             }
 
             if (HttpStatusCode.OK != response.status) {
                 throw RuntimeException(
-                    "Failed to search. Response: status='${response.status}' body='${response.receive<String>()}'"
+                    "Failed to search. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
 
-            val pbSearchResult = Storage.SearchResult.parseFrom(response.receive<ByteArray>())
+            val pbSearchResult = runCatching { Storage.SearchResult.parseFrom(response.receive<ByteArray>()) }
+                .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
             return SearchResult(pieces = pbSearchResult.signedPiecesList.map { sp -> parsePiece(sp.piece) })
         }
     }
 
-    fun parsePiece(pbPiece: Storage.Piece) = Piece(data = pbPiece.data.toByteArray(),
+    private fun parsePiece(pbPiece: Storage.Piece) = Piece(data = pbPiece.data.toByteArray(),
         tags = pbPiece.tagsList.map { Tag(it.key, it.value) },
         links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) })
+
+    private suspend fun sendRequest(path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
+        val url = buildString {
+            append(cdnNodeUrl)
+            append(BASE_PATH)
+            path.takeIf(String::isNotEmpty)?.also { append("/").append(path) }
+        }
+        val request = HttpRequestBuilder().apply {
+            url(url)
+            block()
+        }
+        return runCatching { client.request<HttpResponse>(request) }
+            .getOrElse {
+                val error = it.message?.let { ", error='$it'" } ?: ""
+                throw IOException("Couldn't send request url='$url', method='${request.method.value}$error")
+            }
+    }
 }

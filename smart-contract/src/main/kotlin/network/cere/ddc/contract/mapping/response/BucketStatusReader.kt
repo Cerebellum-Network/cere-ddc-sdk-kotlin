@@ -27,17 +27,7 @@ object BucketStatusReader : ScaleReader<BucketStatus> {
         override fun read(reader: ScaleCodecReader) = BucketStatus.Bucket(
             ownerId = reader.read(AccountIdScale),
             clusterId = reader.readUint32(),
-            flow = reader.read(FlowReader),
             resourceReserved = reader.readUint32()
         )
     }
-
-    private object FlowReader : ScaleReader<BucketStatus.Flow> {
-
-        override fun read(reader: ScaleCodecReader) = BucketStatus.Flow(
-            from = reader.read(AccountIdScale),
-            schedule = reader.read(ScheduleReader)
-        )
-    }
-
 }

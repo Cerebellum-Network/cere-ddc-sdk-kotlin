@@ -2,15 +2,16 @@ package network.cere.ddc.core.signature
 
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import network.cere.ddc.core.extension.hexToBytes
 import org.junit.jupiter.api.Test
 
 internal class Sr25519Test {
 
 
     private val signature =
-        "0x92d20f82f149976ac58c67425368cd45940418b770bd1c19b777057c10a6fc662bf250fc587df78bf0150dec9c3219c42dbeb5e531714ad2800814482ddac887"
+        "0xe6383e3460eeea83a4b5c4f82eae69aa7ece8f6616a06f1694cb5061cd94b04e4302c210740b4d83710d2d3ec224c975754e6de6c81e46b7a88ee84858636882"
 
-    private val testSubject = Sr25519("0x500c89905aba00fc5211a2876b6105001ad8c77218b37b649ee38b4996e0716d6d5c7e03bbedbf39ca3588b5e6e0768e70a4507cd9e089f625929f9efae051f2")
+    private val testSubject = Sr25519("2cf8a6819aa7f2a2e7a62ce8cf0dca2aca48d87b2001652de779f43fecbc5a03".hexToBytes())
 
     @Test
     fun `Valid signature`() {
