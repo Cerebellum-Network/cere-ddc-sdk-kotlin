@@ -18,7 +18,7 @@ import java.io.InvalidObjectException
 
 class ContentAddressableStorage(
     private val scheme: Scheme,
-    private val gatewayNodeUrl: String,
+    private val cdnNodeUrl: String,
     private val clientConfig: ClientConfig = ClientConfig(),
     private val cidBuilder: CidBuilder = CidBuilder(),
 ) {
@@ -130,7 +130,7 @@ class ContentAddressableStorage(
 
     private suspend fun sendRequest(path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
         val url = buildString {
-            append(gatewayNodeUrl)
+            append(cdnNodeUrl)
             append(BASE_PATH)
             path.takeIf(String::isNotEmpty)?.also { append("/").append(path) }
         }

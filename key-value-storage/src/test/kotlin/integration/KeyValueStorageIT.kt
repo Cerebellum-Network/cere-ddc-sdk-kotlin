@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test
 internal class KeyValueStorageIT {
 
     private val privateKey = "0x2cf8a6819aa7f2a2e7a62ce8cf0dca2aca48d87b2001652de779f43fecbc5a03"
-    private val gatewayNodeUrl = "http://localhost:8080"
+    private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
-    private val testSubject = KeyValueStorage(scheme, gatewayNodeUrl)
+    private val testSubject = KeyValueStorage(scheme, cdnNodeUrl)
 
     @Test
     fun `Store and read`() {

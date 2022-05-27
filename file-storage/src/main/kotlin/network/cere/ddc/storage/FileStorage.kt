@@ -23,13 +23,13 @@ import kotlin.io.path.name
 
 class FileStorage(
     scheme: Scheme,
-    gatewayNodeUrl: String,
+    cdnNodeUrl: String,
     private val fileStorageConfig: FileStorageConfig = FileStorageConfig(),
     cidBuilder: CidBuilder = CidBuilder(),
 ) {
 
     private val caStorage =
-        ContentAddressableStorage(scheme, gatewayNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
+        ContentAddressableStorage(scheme, cdnNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
 
     suspend fun upload(bucketId: Long, file: Path): PieceUri = coroutineScope {
         val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
