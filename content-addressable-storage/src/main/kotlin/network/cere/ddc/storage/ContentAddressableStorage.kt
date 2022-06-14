@@ -103,9 +103,13 @@ class ContentAddressableStorage(
         val pbQuery = Storage.Query.newBuilder()
             .setBucketId(query.bucketId)
             .addAllTags(query.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
+            .setSkipData(query.skipData)
             .build()
 
-        return retry(clientConfig.retryTimes, clientConfig.retryBackOff, { it is IOException && it !is InvalidObjectException }) {
+        return retry(
+            clientConfig.retryTimes,
+            clientConfig.retryBackOff,
+            { it is IOException && it !is InvalidObjectException }) {
             val response = sendRequest {
                 method = HttpMethod.Get
                 body = pbQuery.toByteArray()
@@ -120,13 +124,18 @@ class ContentAddressableStorage(
             val pbSearchResult = runCatching { Storage.SearchResult.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
-            return SearchResult(pieces = pbSearchResult.signedPiecesList.map { sp -> parsePiece(sp.piece) })
+            return SearchResult(
+                pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(sp.signedPiece.piece, sp.cid) }
+            )
         }
     }
 
-    private fun parsePiece(pbPiece: Storage.Piece) = Piece(data = pbPiece.data.toByteArray(),
+    private fun parsePiece(pbPiece: Storage.Piece, cid: String? = null) = Piece(
+        data = pbPiece.data.toByteArray() ?: byteArrayOf(),
         tags = pbPiece.tagsList.map { Tag(it.key, it.value) },
-        links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) })
+        links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) },
+        cid = cid
+    )
 
     private suspend fun sendRequest(path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
         val url = buildString {
