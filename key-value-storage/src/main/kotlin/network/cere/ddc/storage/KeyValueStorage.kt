@@ -35,11 +35,7 @@ class KeyValueStorage(
     }
 
     suspend fun read(bucketId: Long, key: String): List<Piece> {
-        return caStorage.search(
-            Query(
-                bucketId = bucketId,
-                tags = listOf(Tag(key = keyTag, value = key))
-            )
-        ).pieces.map { p -> Piece(data = p.data, p.tags.filter { it.key != keyTag }) }
+        return caStorage.search(Query(bucketId = bucketId, tags = listOf(Tag(key = keyTag, value = key))))
+            .pieces.map { p -> Piece(data = p.data, p.tags.filter { it.key != keyTag }) }
     }
 }

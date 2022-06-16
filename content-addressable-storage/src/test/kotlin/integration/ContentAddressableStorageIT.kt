@@ -1,11 +1,13 @@
 package integration
 
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
 import network.cere.ddc.storage.domain.Piece
+import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
 
@@ -33,6 +35,40 @@ internal class ContentAddressableStorageIT {
             //then
             pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
             savedPiece shouldBeEqualToComparingFields piece
+        }
+    }
+
+    @Test
+    fun `Search with data`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val tags = listOf(Tag(key = "Search", value = "test"))
+            val piece = Piece(data = "Hello world!".toByteArray(), tags = tags)
+            val pieceUrl = testSubject.store(bucketId, piece)
+
+            //when
+            val result = testSubject.search(Query(bucketId, tags))
+
+            //then
+            result.pieces shouldContainExactly listOf(piece.copy(cid = pieceUrl.cid))
+        }
+    }
+
+    @Test
+    fun `Search without data`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val tags = listOf(Tag(key = "Search", value = "test"))
+            val piece = Piece(data = "Hello world!".toByteArray(), tags = tags)
+            val pieceUrl = testSubject.store(bucketId, piece)
+
+            //when
+            val result = testSubject.search(Query(bucketId, tags, skipData = true))
+
+            //then
+            result.pieces shouldContainExactly listOf(piece.copy(data = byteArrayOf(), cid = pieceUrl.cid))
         }
     }
 }
