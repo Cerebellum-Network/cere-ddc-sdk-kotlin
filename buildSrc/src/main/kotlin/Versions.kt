@@ -17,4 +17,5 @@ object Versions {
     val polkaj = "0.3.0"
     val caffeine = "3.0.6"
     val openhft = "0.15"
+    val tuweni = "2.2.0"
 }

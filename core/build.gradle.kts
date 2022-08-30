@@ -2,6 +2,7 @@ dependencies {
     // Crypto
     implementation("org.bouncycastle:bcprov-jdk15on:${Versions.bouncyCastle}")
     implementation("com.github.yeeco:schnorrkel-java:${Versions.schnorrkel}")
+    implementation("org.apache.tuweni:tuweni-crypto:${Versions.tuweni}")
 
     implementation("com.github.komputing.khex:core:${Versions.khex}")
     implementation("com.github.komputing.khex:extensions:${Versions.khex}")
