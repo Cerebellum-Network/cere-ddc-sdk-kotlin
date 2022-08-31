@@ -1,5 +1,6 @@
 package integration
 
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
@@ -48,7 +49,7 @@ internal class ContentAddressableStorageIT {
                 data = "Hello world!".toByteArray(),
                 tags = listOf(Tag(key = "Creator", value = "Jack"))
             )
-            val encryptionOptions = EncryptionOptions("/some/path", "secretWord".toByteArray())
+            val encryptionOptions = EncryptionOptions("/some/path", "11111111111111111111111111111111".toByteArray())
 
             //when
             val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
@@ -57,6 +58,7 @@ internal class ContentAddressableStorageIT {
             //then
             pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
             savedPiece.data contentEquals  piece.data
+            savedPiece.tags shouldContainAll listOf(Tag(key = "Creator", value = "Jack"), Tag(key = "dekPath", value = "/some/path"))
         }
     }
 

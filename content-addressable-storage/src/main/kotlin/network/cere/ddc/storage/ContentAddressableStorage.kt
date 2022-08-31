@@ -9,9 +9,9 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.encryption.Cipher
+import network.cere.ddc.core.encryption.EncryptedData
 import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.encryption.NaclCipher
-import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.proto.Storage
@@ -22,9 +22,9 @@ import network.cere.ddc.storage.domain.PieceUri
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchResult
 import network.cere.ddc.storage.domain.Tag
-import org.apache.tuweni.crypto.sodium.SecretBox.Nonce
 import java.io.IOException
 import java.io.InvalidObjectException
+import java.util.*
 
 class ContentAddressableStorage(
     private val scheme: Scheme,
@@ -36,7 +36,7 @@ class ContentAddressableStorage(
     private companion object {
         const val BASE_PATH = "/api/rest/pieces"
         const val DEK_PATH_TAG = "dekPath"
-        const val DEK_NONCE_TAG = "dekNonce"
+        const val NONCE_TAG = "Nonce"
     }
 
     private val client: HttpClient = HttpClient().config {
@@ -90,21 +90,17 @@ class ContentAddressableStorage(
     }
 
     suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): PieceUri {
-        val nonce = Nonce.random()
-        val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek, nonce)
-        val newTags = piece.tags.plus(Tag(DEK_PATH_TAG, encryptionOptions.dekPath)).plus(Tag(DEK_NONCE_TAG, nonce.bytes().toHexString()))
-        return this.store(bucketId, Piece(encryptedData, newTags, piece.links, piece.cid))
+        val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
+        val newTags = piece.tags.plus(Tag(DEK_PATH_TAG, encryptionOptions.dekPath)).plus(Tag(NONCE_TAG, String(encryptedData.nonce)))
+        return this.store(bucketId, piece.copy(data = encryptedData.data, tags = newTags))
     }
 
+//TODO think about overload read method during writing DDC client
     suspend fun readDecrypted(bucketId: Long, cid: String, dek: ByteArray): Piece {
         val piece = read(bucketId, cid)
-        val nonce = Nonce.fromBytes(piece.tags.first { it.key == DEK_NONCE_TAG }.value.hexToBytes())
-        val decryptedData = cipher.decrypt(piece.data, dek, nonce)
-        if (decryptedData != null) {
-            return Piece(decryptedData, piece.tags, piece.links, piece.cid)
-        } else {
-            throw Exception("Unable to decrypt the piece!")
-        }
+        val nonce = piece.tags.first { it.key == NONCE_TAG }.value.toByteArray()
+        val decryptedData = cipher.decrypt(EncryptedData(piece.data, nonce), dek)
+        return piece.copy(data = decryptedData)
     }
 
     suspend fun read(bucketId: Long, cid: String): Piece {
