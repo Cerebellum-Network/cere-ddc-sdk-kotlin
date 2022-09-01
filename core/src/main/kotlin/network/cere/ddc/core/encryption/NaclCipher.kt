@@ -13,6 +13,6 @@ class NaclCipher : Cipher {
     }
 
     override fun decrypt(encryptedData: EncryptedData, dek: ByteArray): ByteArray {
-        return decrypt(encryptedData.data, Key.fromBytes(dek), Nonce.fromBytes(encryptedData.nonce)) ?: throw Exception("Can't decrypt data!")
+        return decrypt(encryptedData.data, Key.fromBytes(dek), Nonce.fromBytes(encryptedData.nonce)) ?: throw RuntimeException("Can't decrypt data!")
     }
 }

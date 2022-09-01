@@ -2,7 +2,7 @@ package network.cere.ddc.core.encryption
 
 data class EncryptionOptions(
     val dekPath: String,
-    val dek: ByteArray,//must have length 32
+    val dek: ByteArray,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

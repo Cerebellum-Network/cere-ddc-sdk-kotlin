@@ -91,7 +91,7 @@ class ContentAddressableStorage(
 
     suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): PieceUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
-        val newTags = piece.tags.plus(Tag(DEK_PATH_TAG, encryptionOptions.dekPath)).plus(Tag(NONCE_TAG, String(encryptedData.nonce)))
+        val newTags = mutableListOf(Tag(DEK_PATH_TAG, encryptionOptions.dekPath), Tag(NONCE_TAG, String(encryptedData.nonce))) + piece.tags
         return this.store(bucketId, piece.copy(data = encryptedData.data, tags = newTags))
     }
 
