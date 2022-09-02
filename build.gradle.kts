@@ -68,5 +68,14 @@ subprojects {
     }
 }
 
+tasks.getByName("build") {
+    dependsOn("getProtoSchemas")
+}
+
+tasks.register("getProtoSchemas") {
+    doLast {
+        Runtime.getRuntime().exec("sh protoSchemasPullCopy.sh")
+    }
+}
 
 
