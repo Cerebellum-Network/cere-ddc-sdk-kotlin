@@ -10,9 +10,20 @@ import io.ktor.http.*
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.proto.Storage
 import network.cere.ddc.storage.config.ClientConfig
-import network.cere.ddc.storage.domain.*
+import network.cere.ddc.storage.domain.Link
+import network.cere.ddc.storage.domain.Piece
+import network.cere.ddc.storage.domain.PieceUri
+import network.cere.ddc.storage.domain.Query
+import network.cere.ddc.storage.domain.SearchResult
+import network.cere.ddc.storage.domain.Tag
+import pb.LinkOuterClass
+import pb.PieceOuterClass
+import pb.QueryOuterClass
+import pb.SearchResultOuterClass
+import pb.SignatureOuterClass
+import pb.SignedPieceOuterClass
+import pb.TagOuterClass
 import java.io.IOException
 import java.io.InvalidObjectException
 
@@ -36,13 +47,13 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    suspend fun store(bucketId: Long, piece: Piece): PieceUri {
-        val pbPiece = Storage.Piece.newBuilder()
-            .setBucketId(bucketId)
-            .setData(ByteString.copyFrom(piece.data))
-            .addAllTags(piece.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
-            .addAllLinks(piece.links.map {
-                Storage.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
+    suspend fun store(bucketId: Long, piece: PieceOuterClass.Piece): PieceUri {
+        val pbPiece = PieceOuterClass.Piece.newBuilder()
+            .setBucketId(bucketId.toInt())
+            .setData(piece.data)
+            .addAllTags(piece.tagsList.map { TagOuterClass.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
+            .addAllLinks(piece.linksList.map {
+                LinkOuterClass.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
             })
             .build()
 
@@ -50,13 +61,13 @@ class ContentAddressableStorage(
         val cid = cidBuilder.build(pieceAsBytes)
         val signature = scheme.sign(cid.toByteArray())
 
-        val signedPiece = Storage.SignedPiece.newBuilder()
+        val signedPiece = SignedPieceOuterClass.SignedPiece.newBuilder()
             .setPiece(pbPiece)
             .setSignature(
-                Storage.Signature.newBuilder()
-                    .setValue(signature)
+                SignatureOuterClass.Signature.newBuilder()
+                    .setValue(ByteString.copyFromUtf8(signature))
                     .setScheme(scheme.name)
-                    .setSigner(scheme.publicKeyHex)
+                    .setSigner(ByteString.copyFromUtf8(scheme.publicKeyHex))
             )
             .build()
 
@@ -92,7 +103,7 @@ class ContentAddressableStorage(
                 )
             }
 
-            val pbSignedPiece = runCatching { Storage.SignedPiece.parseFrom(response.receive<ByteArray>()) }
+            val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
 
             return parsePiece(pbSignedPiece.piece)
@@ -100,9 +111,9 @@ class ContentAddressableStorage(
     }
 
     suspend fun search(query: Query): SearchResult {
-        val pbQuery = Storage.Query.newBuilder()
-            .setBucketId(query.bucketId)
-            .addAllTags(query.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
+        val pbQuery = QueryOuterClass.Query.newBuilder()
+            .setBucketId(query.bucketId.toInt())
+            .addAllTags(query.tags.map { TagOuterClass.Tag.newBuilder().setKey(ByteString.copyFromUtf8(it.key)).setValue(ByteString.copyFromUtf8(it.value)).build() })
             .setSkipData(query.skipData)
             .build()
 
@@ -121,7 +132,7 @@ class ContentAddressableStorage(
                 )
             }
 
-            val pbSearchResult = runCatching { Storage.SearchResult.parseFrom(response.receive<ByteArray>()) }
+            val pbSearchResult = runCatching { SearchResultOuterClass.SearchResult.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
             return SearchResult(
@@ -130,9 +141,9 @@ class ContentAddressableStorage(
         }
     }
 
-    private fun parsePiece(pbPiece: Storage.Piece, cid: String? = null) = Piece(
+    private fun parsePiece(pbPiece: PieceOuterClass.Piece, cid: String? = null) = Piece(
         data = pbPiece.data.toByteArray() ?: byteArrayOf(),
-        tags = pbPiece.tagsList.map { Tag(it.key, it.value) },
+        tags = pbPiece.tagsList.map { Tag(it.key.toStringUtf8(), it.value.toStringUtf8()) },
         links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) },
         cid = cid
     )
