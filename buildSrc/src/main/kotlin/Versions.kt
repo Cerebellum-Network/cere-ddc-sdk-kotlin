@@ -19,4 +19,5 @@ object Versions {
     val openhft = "0.15"
     val tuweni = "2.2.0"
     val jna = "5.12.1"
+    val tweetnacl = "1.1.2"
 }
