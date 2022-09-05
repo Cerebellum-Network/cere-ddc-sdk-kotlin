@@ -44,6 +44,7 @@ subprojects {
             testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
             testImplementation("io.ktor:ktor-client-mock:${Versions.ktor}")
             testImplementation("io.ktor:ktor-client-java:${Versions.ktor}")
+            testImplementation("com.github.jnr:jnr-ffi:${Versions.jnrffi}")
         }
     }
 
