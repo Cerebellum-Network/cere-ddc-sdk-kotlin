@@ -44,7 +44,6 @@ subprojects {
             testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.mockito}")
             testImplementation("io.ktor:ktor-client-mock:${Versions.ktor}")
             testImplementation("io.ktor:ktor-client-java:${Versions.ktor}")
-            testImplementation("com.github.jnr:jnr-ffi:${Versions.jnrffi}")
         }
     }
 
@@ -66,6 +65,17 @@ subprojects {
     dockerCompose {
         isRequiredBy(tasks.test)
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
+    }
+}
+
+tasks.getByName("build") {
+    dependsOn("installLibsodiumLib")
+}
+
+tasks.register("installLibsodiumLib") {
+    doLast {
+        Runtime.getRuntime().exec("apt install libsodium-dev -y")
+//        Runtime.getRuntime().exec("apk add libsodium-dev -y")
     }
 }
 
