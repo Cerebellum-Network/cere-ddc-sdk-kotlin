@@ -62,7 +62,7 @@ class ContentAddressableStorage(
         val signature = scheme.sign(cid.toByteArray())
 
         val signedPiece = SignedPieceOuterClass.SignedPiece.newBuilder()
-            .setPiece(pbPiece)
+//            .setPiece(pbPiece) TODO: parsePiece
             .setSignature(
                 SignatureOuterClass.Signature.newBuilder()
                     .setValue(ByteString.copyFromUtf8(signature))
@@ -106,7 +106,8 @@ class ContentAddressableStorage(
             val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
 
-            return parsePiece(pbSignedPiece.piece)
+//            return parsePiece(pbSignedPiece.piece) TODO: parsePiece
+            return Piece("".toByteArray(), listOf(), listOf())
         }
     }
 
@@ -136,7 +137,8 @@ class ContentAddressableStorage(
                 .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
             return SearchResult(
-                pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(sp.signedPiece.piece, sp.cid) }
+//                pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(sp.signedPiece.piece, sp.cid) } TODO: parsePiece
+            listOf()
             )
         }
     }
