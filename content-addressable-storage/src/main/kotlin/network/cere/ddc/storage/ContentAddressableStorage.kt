@@ -22,6 +22,7 @@ import network.cere.ddc.storage.domain.PieceUri
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchResult
 import network.cere.ddc.storage.domain.Tag
+import org.komputing.khex.extensions.toHexString
 import pb.LinkOuterClass
 import pb.PieceOuterClass
 import pb.QueryOuterClass
@@ -59,9 +60,11 @@ class ContentAddressableStorage(
         val pbPiece = PieceOuterClass.Piece.newBuilder()
             .setBucketId(bucketId.toInt())
             .setData(ByteString.copyFrom(piece.data))
-            .addAllTags(piece.tags.map { TagOuterClass.Tag.newBuilder()
-                .setKey(ByteString.copyFromUtf8(it.key))
-                .setValue(ByteString.copyFromUtf8(it.value)).build() })
+            .addAllTags(piece.tags.map {
+                TagOuterClass.Tag.newBuilder()
+                    .setKey(ByteString.copyFromUtf8(it.key))
+                    .setValue(ByteString.copyFromUtf8(it.value)).build()
+            })
             .addAllLinks(piece.links.map {
                 LinkOuterClass.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
             })
@@ -72,7 +75,7 @@ class ContentAddressableStorage(
         val signature = scheme.sign(cid.toByteArray())
 
         val signedPiece = SignedPieceOuterClass.SignedPiece.newBuilder()
-//            .setPiece(pbPiece) TODO: parsePiece
+            .setPiece(ByteString.copyFrom(pbPiece.toByteArray()))
             .setSignature(
                 SignatureOuterClass.Signature.newBuilder()
                     .setValue(ByteString.copyFromUtf8(signature))
@@ -129,9 +132,7 @@ class ContentAddressableStorage(
 
             val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
-
-//            return parsePiece(pbSignedPiece.piece) TODO: parsePiece
-            return Piece("".toByteArray(), listOf(), listOf())
+            return parsePiece(PieceOuterClass.Piece.parseFrom(pbSignedPiece.piece))
         }
     }
 
@@ -161,8 +162,7 @@ class ContentAddressableStorage(
                 .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
             return SearchResult(
-//                pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(sp.signedPiece.piece, sp.cid) } TODO: parsePiece
-            listOf()
+                pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(PieceOuterClass.Piece.parseFrom(sp.signedPiece.piece), sp.cid) }
             )
         }
     }
