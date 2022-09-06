@@ -58,17 +58,15 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    suspend fun store(bucketId: Long, piece: Piece, sessionId: ByteArray?): DdcUri {
-        val request = buildStoreRequest(bucketId, piece, sessionId);
-        
-        
-        
-        val pbPiece = Storage.Piece.newBuilder()
-            .setBucketId(bucketId)
+    suspend fun store(bucketId: Long, piece: Piece): PieceUri {
+        val pbPiece = PieceOuterClass.Piece.newBuilder()
+            .setBucketId(bucketId.toInt())
             .setData(ByteString.copyFrom(piece.data))
-            .addAllTags(piece.tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
+            .addAllTags(piece.tags.map { TagOuterClass.Tag.newBuilder()
+                .setKey(ByteString.copyFromUtf8(it.key))
+                .setValue(ByteString.copyFromUtf8(it.value)).build() })
             .addAllLinks(piece.links.map {
-                Storage.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
+                LinkOuterClass.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
             })
             .build()
 
