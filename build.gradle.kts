@@ -68,16 +68,5 @@ subprojects {
     }
 }
 
-tasks.getByName("build") {
-    dependsOn("installLibsodiumLib")
-}
-
-tasks.register("installLibsodiumLib") {
-    doLast {
-        Runtime.getRuntime().exec("apt install libsodium-dev -y")
-//        Runtime.getRuntime().exec("apk add libsodium-dev -y")
-    }
-}
-
 
 
