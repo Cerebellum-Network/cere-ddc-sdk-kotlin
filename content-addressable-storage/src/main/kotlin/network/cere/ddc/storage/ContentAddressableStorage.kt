@@ -47,12 +47,14 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    suspend fun store(bucketId: Long, piece: PieceOuterClass.Piece): PieceUri {
+    suspend fun store(bucketId: Long, piece: Piece): PieceUri {
         val pbPiece = PieceOuterClass.Piece.newBuilder()
             .setBucketId(bucketId.toInt())
-            .setData(piece.data)
-            .addAllTags(piece.tagsList.map { TagOuterClass.Tag.newBuilder().setKey(it.key).setValue(it.value).build() })
-            .addAllLinks(piece.linksList.map {
+            .setData(ByteString.copyFrom(piece.data))
+            .addAllTags(piece.tags.map { TagOuterClass.Tag.newBuilder()
+                .setKey(ByteString.copyFromUtf8(it.key))
+                .setValue(ByteString.copyFromUtf8(it.value)).build() })
+            .addAllLinks(piece.links.map {
                 LinkOuterClass.Link.newBuilder().setCid(it.cid).setSize(it.size).setName(it.name).build()
             })
             .build()
