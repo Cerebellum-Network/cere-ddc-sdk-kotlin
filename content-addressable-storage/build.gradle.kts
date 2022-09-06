@@ -4,6 +4,7 @@ dependencies {
 
     implementation("io.ktor:ktor-client-jackson:${Versions.ktor}")
     implementation("com.google.protobuf:protobuf-java:${Versions.protobuf}")
+    implementation("com.github.komputing.khex:extensions:${Versions.khex}")
 
     // CID
     implementation("com.github.ipld:java-cid:${Versions.cid}")

@@ -1,9 +1,11 @@
 package integration
 
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
+import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
 import network.cere.ddc.storage.domain.Piece
@@ -35,6 +37,28 @@ internal class ContentAddressableStorageIT {
             //then
             pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
             savedPiece shouldBeEqualToComparingFields piece
+        }
+    }
+
+    @Test
+    fun `Encrypted store and read`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val piece = Piece(
+                data = "Hello world!".toByteArray(),
+                tags = listOf(Tag(key = "Creator", value = "Jack"))
+            )
+            val encryptionOptions = EncryptionOptions("/some/path", "11111111111111111111111111111111".toByteArray())
+
+            //when
+            val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
+            val savedPiece = testSubject.readDecrypted(bucketId, pieceUrl.cid, encryptionOptions.dek)
+
+            //then
+            pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
+            savedPiece.data contentEquals  piece.data
+            savedPiece.tags shouldContainAll listOf(Tag(key = "Creator", value = "Jack"), Tag(key = "dekPath", value = "/some/path"))
         }
     }
 
