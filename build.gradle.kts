@@ -67,6 +67,9 @@ subprojects {
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
     }
 }
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>(){
+    dependsOn("getProtoSchemas")
+}
 
 tasks.getByName("build") {
     dependsOn("getProtoSchemas")
