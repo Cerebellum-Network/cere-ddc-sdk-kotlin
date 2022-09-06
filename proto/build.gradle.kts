@@ -13,3 +13,13 @@ protobuf {
         artifact = "com.google.protobuf:protoc:3.6.1"
     }
 }
+
+tasks.getByName("build") {
+    dependsOn("getProtoSchemas1")
+}
+
+tasks.register("getProtoSchemas1") {
+    doLast {
+        Runtime.getRuntime().exec("sh protoSchemasPullCopy.sh")
+    }
+}
