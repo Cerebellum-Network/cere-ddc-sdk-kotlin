@@ -8,18 +8,27 @@ import network.cere.ddc.storage.domain.PieceUri
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.Tag
 
-class KeyValueStorage(
-    scheme: Scheme,
-    cdnNodeUrl: String,
-    clientConfig: ClientConfig = ClientConfig(),
-    cidBuilder: CidBuilder = CidBuilder(),
-) {
+class KeyValueStorage{
+    private val caStorage : ContentAddressableStorage
+    constructor(
+        caStorage : ContentAddressableStorage
+    ) {
+        this.caStorage = caStorage
+    }
+    constructor(
+        scheme: Scheme,
+        cdnNodeUrl: String,
+        clientConfig: ClientConfig = ClientConfig(),
+        cidBuilder: CidBuilder = CidBuilder(),
+    ) {
+        this.caStorage = ContentAddressableStorage(scheme, cdnNodeUrl, clientConfig, cidBuilder)
+    }
 
     companion object {
         const val keyTag = "Key"
     }
 
-    private val caStorage = ContentAddressableStorage(scheme, cdnNodeUrl, clientConfig, cidBuilder)
+
 
     suspend fun store(bucketId: Long, key: String, piece: Piece): PieceUri {
         if (piece.tags.any { it.key == keyTag }) {

@@ -10,6 +10,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.storage.config.ClientConfig
 import network.cere.ddc.storage.config.FileStorageConfig
 import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
@@ -21,15 +22,25 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentSkipListSet
 import kotlin.io.path.name
 
-class FileStorage(
-    scheme: Scheme,
-    cdnNodeUrl: String,
-    private val fileStorageConfig: FileStorageConfig = FileStorageConfig(),
-    cidBuilder: CidBuilder = CidBuilder(),
-) {
-
-    private val caStorage =
-        ContentAddressableStorage(scheme, cdnNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
+class FileStorage{
+    private val caStorage : ContentAddressableStorage
+    private val fileStorageConfig : FileStorageConfig
+    constructor(
+        caStorage : ContentAddressableStorage,
+        fileStorageConfig: FileStorageConfig = FileStorageConfig(),
+    ) {
+        this.caStorage = caStorage
+        this.fileStorageConfig = fileStorageConfig
+    }
+    constructor(
+        scheme: Scheme,
+        cdnNodeUrl: String,
+        fileStorageConfig: FileStorageConfig = FileStorageConfig(),
+        cidBuilder: CidBuilder = CidBuilder(),
+    ) {
+        this.caStorage = ContentAddressableStorage(scheme, cdnNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
+        this.fileStorageConfig = fileStorageConfig
+    }
 
     suspend fun upload(bucketId: Long, file: Path): PieceUri = coroutineScope {
         val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
