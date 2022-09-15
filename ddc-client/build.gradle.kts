@@ -10,6 +10,10 @@ repositories {
 }
 
 dependencies {
+
+    //JSON
+    implementation("io.ktor:ktor-client-jackson:${Versions.ktor}")
+
     implementation(project(":core"))
     implementation(project(":smart-contract"))
     implementation(project(":content-addressable-storage"))

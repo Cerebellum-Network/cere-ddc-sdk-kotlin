@@ -17,8 +17,13 @@ import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
 import org.bouncycastle.jcajce.provider.digest.Blake2b
 import java.math.BigInteger
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
-class DdcClientImpl(val caStorage: ContentAddressableStorage, val smartContract: BucketSmartContract, val options: ClientOptions, encryptionSecretPhrase: String) : DdcClient {
+class DdcClientImpl(
+    val caStorage: ContentAddressableStorage,
+    val smartContract: BucketSmartContract,
+    val options: ClientOptions,
+    val encryptionSecretPhrase: String) : DdcClient {
 
     val kvStorage: KeyValueStorage
     val fileStorage: FileStorage
@@ -40,24 +45,23 @@ class DdcClientImpl(val caStorage: ContentAddressableStorage, val smartContract:
     override suspend fun createBucket(balance: Long, _resource: Long, clusterId: Long, bucketParams: BucketParams?): BucketCreatedEvent {
         var resource = _resource
         if (resource > MAX_BUCKET_SIZE) {
-            throw Error("Exceed bucket size. Should be less than $MAX_BUCKET_SIZE");
+            throw Error("Exceed bucket size. Should be less than $MAX_BUCKET_SIZE")
         } else if (resource <= 0) {
             resource = 1
         }
-
-        val event = this.smartContract.bucketCreate(Balance(balance.toBigInteger()), bucketParams, clusterId);
+        val event = this.smartContract.bucketCreate(Balance(balance.toBigInteger()), jacksonObjectMapper().writeValueAsString(bucketParams), clusterId)
         if (balance > 0) {
-            this.smartContract.accountDeposit(Balance(balance.toBigInteger()));
+            this.smartContract.accountDeposit(Balance(balance.toBigInteger()))
         }
 
-        val clusterStatus = this.smartContract.clusterGet(clusterId);
+        val clusterStatus = this.smartContract.clusterGet(clusterId)
         val bucketSize = if (clusterStatus.cluster.vnodes.isNotEmpty())
             BigInteger.valueOf((resource * 1000) / clusterStatus.cluster.vnodes.size)
         else BigInteger.valueOf(0)
 
-        this.smartContract.bucketAllocIntoCluster(event.bucketId, bucketSize);
+        this.smartContract.bucketAllocIntoCluster(event.bucketId, bucketSize.toLong())
 
-        return event;
+        return event
     }
 
     override suspend fun accountDeposit(balance: Long) {
