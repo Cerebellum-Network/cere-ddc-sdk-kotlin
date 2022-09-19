@@ -33,9 +33,9 @@ class ContentAddressableStorage(
     private val cdnNodeUrl: String,
     private val clientConfig: ClientConfig = ClientConfig(),
     private val cidBuilder: CidBuilder = CidBuilder(),
-    private val cipher: Cipher = NaclCipher()
+    val cipher: Cipher = NaclCipher()
 ) {
-    private companion object {
+    companion object {
         const val BASE_PATH = "/api/rest/pieces"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"

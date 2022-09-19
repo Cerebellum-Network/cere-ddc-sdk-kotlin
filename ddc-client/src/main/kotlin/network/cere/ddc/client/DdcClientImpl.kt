@@ -12,8 +12,11 @@ import network.cere.ddc.contract.model.response.BucketStatus
 import network.cere.ddc.contract.model.response.ResultList
 import network.cere.ddc.contract.options.BucketParams
 import network.cere.ddc.contract.options.ClientOptions
+import network.cere.ddc.core.encryption.EncryptedData
 import network.cere.ddc.core.encryption.EncryptionOptions
+import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.storage.ContentAddressableStorage
+import network.cere.ddc.storage.ContentAddressableStorage.Companion.DEK_PATH_TAG
 import network.cere.ddc.storage.FileStorage
 import network.cere.ddc.storage.KeyValueStorage
 import network.cere.ddc.storage.domain.Piece
@@ -114,8 +117,82 @@ class DdcClientImpl(
         TODO("Not yet implemented")
     }
 
+    private suspend fun downloadDek(bucketId: Long, dekPath: String): ByteArray {
+        val pieces = kvStorage.read(bucketId, "${bucketId}/${dekPath}/${boxKeypair.publicKey.decodeToString()}")
+        if (pieces.isEmpty()){
+            throw Exception("Client EDEK not found")
+        }
+        val piece = pieces[0]
+
+        val encryptor = piece.tags.find{ it.key === ENCRYPTOR_TAG}?.value ?: throw Exception("EDEK doesn't contains encryptor public key");
+        val box = Box(encryptor.encodeToByteArray(), boxKeypair.secretKey)
+        val result = box.open(piece.data) ?: throw Exception("Unable to decrypt dek");
+        return result;
+    }
+
+    private fun buildHierarchicalDekHex(dek: ByteArray, dekPath: String?): ByteArray {
+        if (dekPath == null) {
+            return dek
+        }
+
+        val pathParts = dekPath.split("/")
+        var increasingDek = dek
+        for (part in pathParts) {
+            val data = increasingDek + part.encodeToByteArray();
+            increasingDek = Blake2b.Blake2b256().digest(data)
+        }
+
+        return increasingDek
+    }
+
+    private suspend fun findDek(pieceUri: PieceUri, piece: Piece, options: ReadOptions?): ByteArray {
+        if (options != null && options.decrypt) {
+            val dekPath = piece.tags.find{ it.key == DEK_PATH_TAG }?.value;
+            if (dekPath == null) {
+                throw Exception("Piece=${pieceUri} doesn't have dekPath");
+            } else if (!dekPath.startsWith(options.dekPath!! + "/") && dekPath !== options.dekPath!!) {
+                throw Exception("Provided dekPath='${options.dekPath}' doesn't correct for piece with dekPath='${dekPath}'");
+            }
+
+            val clientDek = downloadDek(pieceUri.bucketId, options.dekPath!!);
+
+            return buildHierarchicalDekHex(clientDek, dekPath.replace(options.dekPath!!, "").replace("/", ""))
+        }
+
+        return ByteArray(8);
+    }
+
+    private suspend fun readByPieceUri(pieceUri: PieceUri, headPiece: Piece, options: ReadOptions?): Piece {
+        val isEncrypted = headPiece.tags.any { it.key == DEK_PATH_TAG };
+        val nonce = headPiece.tags.first { it.key == ContentAddressableStorage.NONCE_TAG }.value;
+
+        //TODO 4. put into DEK cache
+        val dek = findDek(pieceUri, headPiece, options);
+
+        if (headPiece.links.isNotEmpty()) {
+            TODO("Not yet implemented")
+            //read file
+        } else {
+                if (options != null && isEncrypted && options.decrypt) {
+                    headPiece.data = caStorage.cipher.decrypt(EncryptedData(headPiece.data, nonce.hexToBytes()) , dek)
+                }
+
+            return headPiece
+        }
+    }
+
     override suspend fun read(pieceUri: PieceUri, options: ReadOptions?): Piece {
-        TODO("Not yet implemented")
+        if (pieceUri.protocol) {
+        val pieceUri = PieceUri(pieceUri.bucket, pieceUri.path as string);
+        val piece = caStorage.read(pieceUri.bucketId, pieceUri.cid);
+        if (options.decrypt) {
+            val dek = this.findDek(pieceUri, piece, options);
+            piece.data = caStorage.cipher.decrypt(piece.data, dek);
+        }
+        return piece;
+        }
+        val headPiece = caStorage.read(pieceUri.bucket as bigint, pieceUri.path as string);
+        return readByPieceUri(pieceUri, headPiece, options);
     }
 
     override suspend fun search(query: Query): Array<Piece> {
