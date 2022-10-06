@@ -96,7 +96,7 @@ class DdcClientImpl(
         return smartContract.bucketList(offset, limit, AccountId(filterOwnerId))
     }
 
-    override suspend fun store(bucketId: Long, piece: Piece, options: StoreOptions?): PieceUri {
+    override suspend fun store(bucketId: Long, piece: Piece, options: StoreOptions?): DdcUri {
         return if (options != null && options.encrypt) {
             storeEncrypted(bucketId, piece, options)
         } else {
@@ -104,26 +104,34 @@ class DdcClientImpl(
         }
     }
 
-    private suspend fun storeUnencrypted(bucketId: Long, piece: Piece): PieceUri {
+    private suspend fun storeUnencrypted(bucketId: Long, piece: Piece): DdcUri {
         return caStorage.store(bucketId, piece)
     }
 
-    private suspend fun storeEncrypted(bucketId: Long, piece: Piece, options: StoreOptions): PieceUri {
+    private suspend fun storeEncrypted(bucketId: Long, fileOrPiece: Container, options: StoreOptions): DdcUri {
         var dek = buildHierarchicalDekHex(masterDek, options.dekPath);
         //ToDo can be random (Nacl ScaleBox). We need to decide if we need store publickey of user who created edek or shared
-        var edek = nacl.box(dek, emptyNonce, this.boxKeypair.publicKey, this.boxKeypair.secretKey);
-
+        val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
+        var edek = box.box(dek)
         //ToDo need better structure to store keys
-
         val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.decodeToString()}"))
         val p = Piece(edek, tags)
         caStorage.store(bucketId, p)
 
-        return this.store(bucketId, piece.copy(data = encryptedData.data, tags = tags))
-
         val encryptionOptions = EncryptionOptions(options.dekPath ?: "", dek);
-        return caStorage.storeEncrypted(bucketId, piece, encryptionOptions);
-        TODO("Not yet implemented")
+
+        if (fileOrPiece is Piece){
+            val pieceUri = caStorage.storeEncrypted(bucketId, fileOrPiece, encryptionOptions);
+            return DdcUri.Builder().bucketId(pieceUri.bucketId!!).cid(pieceUri.cid!!).protocol(Protocol.IPIECE).build()
+        } else {
+            val pieceUri = fileStorage.uploadEncrypted(
+                bucketId,
+                fileOrPiece.data,
+                fileOrPiece.tags,
+                encryptionOptions,
+            );
+            return DdcUri.Builder().bucketId(pieceUri.bucketId!!).cid(pieceUri.cid!!).protocol(Protocol.IFILE).build()
+        }
     }
 
     private suspend fun downloadDek(bucketId: Long, dekPath: String): ByteArray {
@@ -163,7 +171,7 @@ class DdcClientImpl(
                 throw Exception("Provided dekPath='${options.dekPath}' doesn't correct for piece with dekPath='${dekPath}'");
             }
 
-            val clientDek = downloadDek(ddcUri.bucketId, options.dekPath!!);
+            val clientDek = downloadDek(ddcUri.bucketId!!, options.dekPath!!);
 
             return buildHierarchicalDekHex(clientDek, dekPath.replace(options.dekPath!!, "").replace("/", ""))
         }
@@ -196,7 +204,7 @@ class DdcClientImpl(
             val piece = caStorage.read(pieceUri.bucketId, pieceUri.cid);
             if (options != null && options.decrypt) {
                 val dek = this.findDek(ddcUri, piece, options);
-                piece.data = caStorage.cipher.decrypt(piece.data, dek);
+                piece.data = caStorage.cipher.decrypt(EncryptedData(piece.data, ), dek);
             }
             return piece;
         }
@@ -211,8 +219,8 @@ class DdcClientImpl(
 
     override suspend fun shareData(bucketId: Long, dekPath: String, partnerBoxPublicKey: String): DdcUri {
         val dek = buildHierarchicalDekHex(masterDek, dekPath);
-        val box = Box(dek, boxKeypair.secretKey)
-        val partnerEdek = box(dek, emptyNonce, partnerBoxPublicKey, boxKeypair.secretKey);
+        val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
+        val partnerEdek = box.box(dek);
         val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${dekPath}/${partnerBoxPublicKey}"))
         val pieceUri = this.caStorage.store(bucketId, Piece(partnerEdek, tags));
         return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build();

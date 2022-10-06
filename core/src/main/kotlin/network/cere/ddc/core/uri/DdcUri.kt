@@ -1,8 +1,8 @@
 package network.cere.ddc.core.uri
 
 data class DdcUri(
-    val bucketId: Long?,
-    val cid: String?,
+    val bucketId: Long,
+    val cid: String,
     val path: String?,
     val protocol: Protocol?,
     val organization: String?,

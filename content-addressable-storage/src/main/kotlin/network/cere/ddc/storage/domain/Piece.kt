@@ -1,10 +1,10 @@
 package network.cere.ddc.storage.domain
 
 data class Piece (
-    var data: ByteArray,
-    val tags: List<Tag> = listOf(),
+    override var data: ByteArray,
+    override val tags: List<Tag> = listOf(),
     val links: List<Link> = listOf(),
-    val cid: String? = null
+    override val cid: String? = null
 ): Container {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

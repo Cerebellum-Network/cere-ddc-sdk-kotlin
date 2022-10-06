@@ -1,9 +1,9 @@
 package network.cere.ddc.storage.domain
 
 data class File (
-    var data: ByteArray,
-    val tags: List<Tag> = listOf(),
-    val cid: String? = null
+    override var data: ByteArray,
+    override val tags: List<Tag> = listOf(),
+    override val cid: String? = null
 ): Container {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

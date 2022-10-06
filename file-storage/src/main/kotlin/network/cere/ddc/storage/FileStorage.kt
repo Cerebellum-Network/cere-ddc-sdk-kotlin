@@ -9,12 +9,15 @@ import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import network.cere.ddc.core.cid.CidBuilder
+import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.storage.config.ClientConfig
 import network.cere.ddc.storage.config.FileStorageConfig
 import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.PieceUri
+import network.cere.ddc.storage.domain.Tag
 import network.cere.ddc.storage.file.ChunkData
 import network.cere.ddc.storage.file.readToChannel
 import network.cere.ddc.storage.file.writeFromChannel
@@ -42,7 +45,7 @@ class FileStorage{
         this.fileStorageConfig = fileStorageConfig
     }
 
-    suspend fun upload(bucketId: Long, file: Path): PieceUri = coroutineScope {
+    suspend fun upload(bucketId: Long, file: Path): DdcUri = coroutineScope {
         val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
         val indexedBytes = indexBytes(channelBytes)
         val linksSet = ConcurrentSkipListSet<Pair<Long, Link>>(Comparator.comparingLong { it.first })
@@ -58,7 +61,7 @@ class FileStorage{
                     val pieceUri = caStorage.store(bucketId, Piece(data = it.second))
                     linksSet.add(
                         it.first to Link(
-                            cid = pieceUri.cid,
+                            cid = pieceUri.cid!!,
                             size = it.second.size.toLong()
                         )
                     )
@@ -126,6 +129,10 @@ class FileStorage{
         }
 
         return result
+    }
+
+    fun uploadEncrypted(bucketId: Long, data: ByteArray, tags: List<Tag>, encryptionOptions: EncryptionOptions): PieceUri {
+        TODO("Not yet implemented")
     }
 
     private data class ReadTask(

@@ -15,6 +15,8 @@ import network.cere.ddc.core.encryption.NaclCipher
 import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.core.uri.DdcUri
+import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.proto.Storage
 import network.cere.ddc.storage.config.ClientConfig
 import network.cere.ddc.storage.domain.Link
@@ -51,7 +53,7 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    suspend fun store(bucketId: Long, piece: Piece): PieceUri {
+    suspend fun store(bucketId: Long, piece: Piece): DdcUri {
         val pbPiece = Storage.Piece.newBuilder()
             .setBucketId(bucketId)
             .setData(ByteString.copyFrom(piece.data))
@@ -87,11 +89,11 @@ class ContentAddressableStorage(
                 )
             }
 
-            return PieceUri(bucketId, cid)
+            return DdcUri.Builder().protocol(Protocol.IPIECE).bucketId(bucketId).cid(cid).build()
         }
     }
 
-    suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): PieceUri {
+    suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): DdcUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
         val newTags = mutableListOf(Tag(DEK_PATH_TAG, encryptionOptions.dekPath), Tag(NONCE_TAG, encryptedData.nonce.toHexString())) + piece.tags
         return this.store(bucketId, piece.copy(data = encryptedData.data, tags = newTags))
