@@ -77,6 +77,8 @@ tasks.getByName("build") {
 
 tasks.register("getProtoSchemas") {
     doLast {
+        Runtime.getRuntime().exec("ls")
+        Runtime.getRuntime().exec("sh ls")
         Runtime.getRuntime().exec("sh protoSchemasPullCopy.sh")
     }
 }
