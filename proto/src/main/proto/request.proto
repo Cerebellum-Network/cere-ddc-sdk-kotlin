@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+  Request structure for API v1
+ */
+message Request {
+  // Request body
+  bytes body = 1;
+  // User public key
+  bytes publicKey = 3;
+  // User signature sign(CID(HTTP method size + HTTP method + url size + url + varint body size + body + varint sessionId size + sessionId))
+  bytes signature = 4;
+  // The name of the signature scheme (sr25519, ed25519).
+  // Default and recommended value: "" or "sr25519".
+  string scheme = 5;
+  // The ID of the hashing algorithm as per multiformats/multihash.
+  // Default and recommended value: 0 or 0xb220, meaning blake2b-256.
+  uint64 multiHashType = 6;
+  // Session Id
+  bytes sessionId = 7;
+}

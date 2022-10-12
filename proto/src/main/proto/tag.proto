@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+ * A tag is a `key/value` attribute attached to a piece.
+ *
+ * Tags can be used to search or filter pieces in storage. If search is not needed, disable it
+ * using the `searchable` field.
+ *
+ * Specific tags are used to implement different higher protocols, such as a file system.
+ * Each key should start with a prefix indicating which protocol or application relies on it. Below is a non-exhaustive table of known tag keys:
+ *
+ * Tag Key      | Description
+ * ------------ | -----------
+ * content-type | The MIME type of the payload of a piece or file. This is returned by the CDN web interface as HTTP Content-Type.
+ * file-*       | Tags to implement a filesystem over object storage. Example: `file-path`
+ * kv-*         | Tags to implement a key/value store over object storage.
+ * enc-*        | Tags to organize data encryption and data sharing keys.
+ *
+ * Below is the structure of a tag:
+ */
+message Tag {
+  // The key of the tag. It is usually a UTF-8 string, but it may be any data.
+  bytes         key           = 1;
+  // The value of the tag for this key. The value should be interpreted based on the key.
+  bytes         value         = 2;
+  // Whether this tag is searchable or not. Yes by default.
+  SearchType    searchable    = 3;
+}
+
+
+// How can this tag be searched.
+enum SearchType {
+  // RANGE tags should be indexed by nodes into their database to allow efficient queries on a key
+  // for an exact value or a range of values. This is the default.
+  RANGE             = 0;
+  // NOT_SEARCHABLE tags should not be indexed. This option should be set when possible to save
+  // node space and speed.
+  NOT_SEARCHABLE    = 1;
+}

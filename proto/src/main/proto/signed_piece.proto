@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package pb;
+
+import "signature.proto";
+
+option go_package = "/pb";
+
+/*
+ * A piece signed by an account.
+ * This can be used to verify the intent of the account holder to upload the piece.
+ */
+message SignedPiece {
+  // A Piece message serialized in protobuf.
+  bytes     piece     = 1;
+  // A signature of the piece by the keypair of the uploader.
+  Signature signature = 2;
+}

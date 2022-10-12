@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb;
+
+import "link.proto";
+import "tag.proto";
+
+option go_package = "/pb";
+
+/*
+ * A piece is a container of data and metadata.
+ * It is the smallest indivisible unit stored in DDC object storage.
+ */
+message Piece {
+  // The opaque payload carried by the piece.
+  bytes         data     = 1;
+  // The ID of a bucket that contains the piece.
+  uint32        bucketId = 2;
+  // A list of tags with which the piece may be searched.
+  // There can be multiple tags with the same key.
+  repeated Tag  tags     = 3;
+  // A list of links to other pieces.
+  // If this piece is interpreted as a file, the linked pieces make up the file content.
+  repeated Link links    = 4;
+}

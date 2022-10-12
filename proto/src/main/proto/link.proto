@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+ * A link is a pointer from one piece to another.
+ */
+message Link {
+  // The CID of the linked piece.
+  string cid  = 1;
+  // The size of the payload of the linked piece.
+  uint64 size = 2;
+  // The name of the linked piece, in the context of the linking piece.
+  string name = 3;
+}

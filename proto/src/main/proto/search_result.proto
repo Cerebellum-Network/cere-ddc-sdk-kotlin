@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+import "signed_piece.proto";
+
+option go_package = "/pb";
+
+/*
+ * A search result contains the pieces found from a search.
+ */
+message SearchResult {
+  // The list of pieces found in storage.
+  repeated SearchedPiece searchedPieces = 1;
+}
+
+/*
+ * A searched piece found in storage.
+ */
+message SearchedPiece {
+  // Found signed piece.
+  SignedPiece signedPiece = 1;
+
+  // CID of the found piece.
+  string cid = 2;
+}

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+  Session status update request
+ */
+message SessionStatus {
+  // Node public key
+  bytes publicKey = 1;
+  // Reserved gas number (incremental after each status update)
+  uint32 gas = 2;
+  // Session identifier (secret value)
+  bytes sessionId = 3;
+  // Session expiration time in UNIX milliseconds
+  uint64 endOfEpoch = 4;
+  // Bucket Id for which session
+  uint32 bucketId = 5;
+}
+
+/*
+  Session status record in storage
+ */
+message SessionStatusRecord {
+  // Session status
+  SessionStatus sessionStatus = 1;
+  // Payer publicKey
+  bytes publicKey = 2;
+  // Payer signature
+  bytes signature = 3;
+  // timestamp of request in UNIX milliseconds.
+  uint64 timestamp = 4;
+}
