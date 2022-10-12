@@ -126,25 +126,22 @@ class ContentAddressableStorage(
             .setSignature(pbSignature)
             .build()
 
-        val signedPieceSerial = SignedPieceOuterClass.SignedPiece.toBinary(pbSignedPiece);
         val requestSignature = if (sessionId != null && sessionId.size > 0) {
             null
         } else {
-
-            signRequest(RequestOuterClass.Request.create({ body: signedPieceSerial }), BASE_PATH_PIECES, HttpMethod.Put)
+            signRequest(RequestOuterClass.Request.newBuilder().setBody(pbSignedPiece.toByteString()).build(), BASE_PATH_PIECES, HttpMethod.Put)
         }
 
-        val request = RequestOuterClass.Request.create({
-            body: signedPieceSerial,
-            scheme: this.scheme.name,
-            sessionId,
-            publicKey: this.scheme.publicKey,
-            multiHashType: 0n,
-            signature: requestSignature,
-        });
+        val request = RequestOuterClass.Request.newBuilder()
+            .setBody(pbSignedPiece.toByteString())
+            .setScheme(scheme.name)
+            .setSessionId(ByteString.copyFromUtf8(sessionId.contentToString()))
+            .setPublicKey(ByteString.copyFromUtf8(scheme.publicKeyHex))
+            .setMultiHashType(0)
+            .setSignature(ByteString.copyFromUtf8(requestSignature)).build()
 
         // @ts-ignore
-        return { body: PbRequest.toBinary(request), cid, method: HttpMethod.Put, path: BASE_PATH_PIECES };
+        return StoreRequest(request.toByteArray(), cid, HttpMethod.Put.value, BASE_PATH_PIECES)
     }
 
     private suspend fun signRequest(request: RequestOuterClass.Request, path: String, method: HttpMethod = HttpMethod.Get): String {
