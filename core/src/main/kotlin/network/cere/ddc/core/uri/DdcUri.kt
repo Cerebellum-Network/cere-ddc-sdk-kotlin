@@ -62,7 +62,7 @@ data class DdcUri(
         fun protocol(protocol: Protocol) = apply { this.protocol = protocol }
         fun organization(organization: String) = apply { this.organization = organization }
         fun options(options: String) = apply { this.options = options }
-        fun build() = DdcUri(bucketId, cid, path, protocol, organization, options)
+        fun build() = DdcUri(bucketId!!, cid!!, path, protocol, organization, options)
     }
 
 }
