@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InvalidObjectException
 import java.net.URL
+import java.nio.ByteBuffer
 import java.util.*
 
 
@@ -108,65 +109,77 @@ class ContentAddressableStorage(
         }
     }
 
-//    private suspend fun buildStoreRequest(bucketId: Long, piece: Piece, sessionId: ByteArray?): StoreRequest {
-//        val pbPiece: PieceOuterClass.Piece = piece.toProto(bucketId)
-//        val cid = cidBuilder.build(pbPiece.toByteArray())
-//        val timestamp = Date()
-//        val signature = scheme.sign("<Bytes>DDC store ${cid} at ${timestamp}</Bytes>".toByteArray())
-//        val pbSignature = SignatureOuterClass.Signature.newBuilder().setValue(signature).setScheme(scheme.name).setSigner(scheme.publicKeyHex).build()//timestamp, multiHashType?
-//        val pbSignedPiece: SignedPieceOuterClass.SignedPiece = SignedPieceOuterClass.SignedPiece.newBuilder().setPiece(pbPiece).setSignature(pbSignature).build()
-//
-//        val signedPieceSerial = SignedPieceOuterClass.SignedPiece.toBinary(pbSignedPiece);
-//        val requestSignature = if (sessionId != null && sessionId.size > 0) {
-//            null
-//        } else {
-//
-//            signRequest(RequestOuterClass.Request.create({ body: signedPieceSerial }), BASE_PATH_PIECES, HttpMethod.Put)
-//        }
-//
-//        val request = RequestOuterClass.Request.create({
-//            body: signedPieceSerial,
-//            scheme: this.scheme.name,
-//            sessionId,
-//            publicKey: this.scheme.publicKey,
-//            multiHashType: 0n,
-//            signature: requestSignature,
-//        });
-//
-//        // @ts-ignore
-//        return { body: PbRequest.toBinary(request), cid, method: HttpMethod.Put, path: BASE_PATH_PIECES };
-//    }
-//
-//    private suspend fun signRequest(request: RequestOuterClass.Request, path: String, method: HttpMethod = HttpMethod.Get): String {
-//        val cid = cidBuilder.build(
-//            concatArrays(
-//                getPath(path, method),
-//                ByteArray(encode(request.body.length)),
-//                request.body,
-//                ByteArray(encode(request.sessionId.length)),
-//                request.sessionId,
-//            ),
-//        );
-//        return scheme.sign("<Bytes>${cid}</Bytes>".toByteArray());
-//    }
-//
-//    private fun concatArrays(vararg arrays: ByteArray): ByteArray {
-//        val out = ByteArrayOutputStream()
-//        arrays.forEach { out.write(it) }
-//        return out.toByteArray()
-//    }
-//
-//    private fun getPath(path: String, method: HttpMethod = HttpMethod.Get): ByteArray {
-//        val url = URL("${cdnNodeUrl}${path}");
-//        val query = "?" + url.query.split('&').filter { it.split('=')[0] != "data" }.reduce { str1, str2 -> str1 + str2 }
-//        val link = "${url.path}${query}";
-//        return concatArrays(
-//            ByteArray(encode(method.value.length)),//?
-//            method.value.toByteArray(),
-//            ByteArray(encode(link.length)),
-//            link.toByteArray(),
-//        );
-//    }
+    private suspend fun buildStoreRequest(bucketId: Long, piece: Piece, sessionId: ByteArray?): StoreRequest {
+        val pbPiece: PieceOuterClass.Piece = piece.toProto(bucketId)
+        val cid = cidBuilder.build(pbPiece.toByteArray())
+        val timestamp = Date()
+        val signature = scheme.sign("<Bytes>DDC store ${cid} at ${timestamp}</Bytes>".toByteArray())
+        val pbSignature = SignatureOuterClass.Signature
+            .newBuilder()
+            .setValue(ByteString.copyFromUtf8(signature))
+            .setScheme(scheme.name)
+            .setSigner(ByteString.copyFromUtf8(scheme.publicKeyHex))
+            .build()//timestamp, multiHashType?
+        val pbSignedPiece: SignedPieceOuterClass.SignedPiece = SignedPieceOuterClass.SignedPiece
+            .newBuilder()
+            .setPiece(ByteString.copyFrom(pbPiece.toByteArray()))
+            .setSignature(pbSignature)
+            .build()
+
+        val signedPieceSerial = SignedPieceOuterClass.SignedPiece.toBinary(pbSignedPiece);
+        val requestSignature = if (sessionId != null && sessionId.size > 0) {
+            null
+        } else {
+
+            signRequest(RequestOuterClass.Request.create({ body: signedPieceSerial }), BASE_PATH_PIECES, HttpMethod.Put)
+        }
+
+        val request = RequestOuterClass.Request.create({
+            body: signedPieceSerial,
+            scheme: this.scheme.name,
+            sessionId,
+            publicKey: this.scheme.publicKey,
+            multiHashType: 0n,
+            signature: requestSignature,
+        });
+
+        // @ts-ignore
+        return { body: PbRequest.toBinary(request), cid, method: HttpMethod.Put, path: BASE_PATH_PIECES };
+    }
+
+    private suspend fun signRequest(request: RequestOuterClass.Request, path: String, method: HttpMethod = HttpMethod.Get): String {
+        val cid = cidBuilder.build(
+            concatArrays(
+                getPath(path, method),
+                intToBytes(request.body.size()),
+                request.body.toByteArray(),
+                intToBytes(request.sessionId.size()),
+                request.sessionId.toByteArray(),
+            ),
+        );
+        return scheme.sign("<Bytes>${cid}</Bytes>".toByteArray());
+    }
+
+    private fun concatArrays(vararg arrays: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        arrays.forEach { out.write(it) }
+        return out.toByteArray()
+    }
+
+    private fun getPath(path: String, method: HttpMethod = HttpMethod.Get): ByteArray {
+        val url = URL("${cdnNodeUrl}${path}");
+        val query = "?" + url.query.split('&').filter { it.split('=')[0] != "data" }.reduce { str1, str2 -> str1 + str2 }
+        val link = "${url.path}${query}";
+        return concatArrays(
+            intToBytes(method.value.length),//?
+            method.value.toByteArray(),
+            intToBytes(link.length),
+            link.toByteArray(),
+        );
+    }
+
+    fun intToBytes(i: Int): ByteArray =
+        ByteBuffer.allocate(Int.SIZE_BYTES).putInt(i).array()
 
     suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): DdcUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)

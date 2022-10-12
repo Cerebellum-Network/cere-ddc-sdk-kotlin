@@ -1,7 +1,9 @@
 package network.cere.ddc.storage.domain
 
 import com.google.protobuf.ByteString
-import network.cere.ddc.proto.Storage
+import pb.LinkOuterClass
+import pb.PieceOuterClass
+import pb.TagOuterClass
 
 data class Piece (
     override var data: ByteArray,
@@ -31,9 +33,9 @@ data class Piece (
         return result
     }
 
-    fun toProto(bucketId: Long): Storage.Piece {
-        val protoTags = tags.map { Storage.Tag.newBuilder().setKey(it.key).setValue(it.value).build() }.asIterable()
-        val protoLinks = links.map { Storage.Link.newBuilder().setCid(it.cid).setName(it.name).setSize(it.size).build() }.asIterable()
-        return Storage.Piece.newBuilder().setBucketId(bucketId).setData(ByteString.copyFrom(data)).addAllTags(protoTags).addAllLinks(protoLinks).build()
+    fun toProto(bucketId: Long): PieceOuterClass.Piece {
+        val protoTags = tags.map { TagOuterClass.Tag.newBuilder().setKey(ByteString.copyFromUtf8(it.key)).setValue(ByteString.copyFromUtf8(it.value)).build() }.asIterable()
+        val protoLinks = links.map { LinkOuterClass.Link.newBuilder().setCid(it.cid).setName(it.name).setSize(it.size).build() }.asIterable()
+        return PieceOuterClass.Piece.newBuilder().setBucketId(bucketId.toInt()).setData(ByteString.copyFrom(data)).addAllTags(protoTags).addAllLinks(protoLinks).build()
     }
 }
