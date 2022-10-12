@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+ * A signature and details to help verify it.
+ * 
+ * #### Generation
+ *
+ * - Compute a CID from the `piece` bytes using details from `signature`:
+ *     - [CIDv1](https://github.com/multiformats/cid).
+ *     - The hash function should be blake2b-256 and `multiHashType` should be empty.
+ *     - Content type codec `0x55`
+ *     - Base encoded in Base32 with the prefix `b`
+ *     - Example: bafk2bzacea73ycjnxe2qov7cvnhx52lzfp6nf5jcblnfus6gqreh6ygganbws
+ *
+ * - Store the public key of the signer in `publicKey` in binary encoding.
+ *
+ * - Store the current time in `timestamp`
+ *     - In JavaScript: `timestamp = +new Date()`
+ *
+ * - Format the current time in ISO 8601 `YYYY-MM-DDTHH:mm:ss.sssZ`
+       - In JavaScript: `timeText = new Date(timestamp).toISOString()`
+       - In Go format: `2006-01-02T15:04:05.000Z`
+ *
+ * - The signed message to store a piece is:
+ *     - `<Bytes>DDC store ${CID} at ${timeText}</Bytes>`
+ *     - Note: the `<Bytes>` part is enforced by the Polkadot.js browser extension.
+ *     - Example: `<Bytes>DDC store bafk2bzacea73ycjnxe2qov7cvnhx52lzfp6nf5jcblnfus6gqreh6ygganbws at 2022-06-27T07:33:44.607Z</Bytes>`
+ *
+ * - The signing scheme should be sr25519, and `scheme` should be empty.
+ *     - If this not supported by a signer, then `scheme` should be "ed25519".
+ *
+ * - Sign and store the signature in `sig` in binary encoding.
+ * 
+ * #### Verification
+ * 
+ * - Recompute the signed message using the details in `signature`.
+ * - Verify `sig` given the scheme, the message, and the public key.
+ * 
+ * #### Legacy signatures before v0.1.4
+ * 
+ * If `timestamp == 0`, assume an older version:
+ * - Decode `value` and `signer` from hexadecimal with or without `0x`.
+ * - Then the signed message is either `${CID}` or `<Bytes>${CID}</Bytes>`.
+ *
+ */
+message Signature {
+  // The cryptographic signature in binary encoding as per the scheme.
+  bytes value          = 1;
+  // The public key of the signer in binary encoding as per the scheme.
+  bytes signer         = 2;
+  // The name of the signature scheme (sr25519, secp256k1, ed25519).
+  // Default and recommended value: "" or "sr25519".
+  string scheme        = 3;
+  // The ID of the hashing algorithm as per multiformats/multihash.
+  // Default and recommended value: 0 or 0xb220, meaning blake2b-256.
+  uint64 multiHashType = 4;
+  // The timestamp in UNIX milliseconds.
+  uint64 timestamp     = 5;
+}
