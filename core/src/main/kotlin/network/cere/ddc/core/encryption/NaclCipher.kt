@@ -14,4 +14,8 @@ class NaclCipher : Cipher {
         secretBox.open(encryptedData.data)
         return secretBox.open(encryptedData.data)
     }
+
+    override fun getEmptyNonce(): ByteArray {
+        return ByteArray(SecretBox.nonceLength)
+    }
 }
