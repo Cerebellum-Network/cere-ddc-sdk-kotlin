@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation(project(":core"))
     implementation(project(":file-storage"))
+    implementation(project(":content-addressable-storage"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}")
 
@@ -35,6 +36,9 @@ dependencies {
 
     //Cache
     implementation("com.github.ben-manes.caffeine:caffeine:${Versions.caffeine}")
+
+    // CID
+    implementation("com.github.ipld:java-cid:${Versions.cid}")
 
     //Other
     implementation("com.github.komputing.khex:extensions:${Versions.khex}")

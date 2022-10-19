@@ -4,7 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.iwebpp.crypto.TweetNacl.Box
 import network.cere.ddc.client.options.ReadOptions
 import network.cere.ddc.client.options.StoreOptions
+import network.cere.ddc.contract.BucketContractConfig
 import network.cere.ddc.contract.BucketSmartContract
+import network.cere.ddc.contract.blockchain.BlockchainConfig
 import network.cere.ddc.contract.model.AccountId
 import network.cere.ddc.contract.model.Balance
 import network.cere.ddc.contract.model.event.BucketCreatedEvent
@@ -15,6 +17,7 @@ import network.cere.ddc.contract.options.ClientOptions
 import network.cere.ddc.core.encryption.EncryptedData
 import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.extension.hexToBytes
+import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.storage.ContentAddressableStorage
@@ -40,9 +43,20 @@ class DdcClientImpl(
     private val masterDek: ByteArray = Blake2b.Blake2b256().digest(encryptionSecretPhrase.toByteArray())//TODO is .toByteArray() ok?
     private val boxKeypair: Box.KeyPair = Box.keyPair_fromSecretKey(encryptionSecretPhrase.toByteArray())//TODO is .toByteArray() ok?
 
-    private companion object {
+    companion object {
         const val ENCRYPTOR_TAG = "encryptor"
         const val MAX_BUCKET_SIZE = 5
+        suspend fun buildAndConnect(options: ClientOptions, secretPhrase: String, encryptionSecretPhrase: String?): DdcClient {
+            val encryptionSecretPhrase = encryptionSecretPhrase ?: secretPhrase;
+
+            val scheme = Scheme.create(options.schemeType, secretPhrase)
+            val config = BlockchainConfig(options.smartContract.rpcUrl, options.smartContract.contractAddress, encryptionSecretPhrase)
+            val bucketContractConfig = BucketContractConfig(options.smartContract.abi.toPath())
+            val smartContract = BucketSmartContract.buildAndConnect(config, bucketContractConfig);
+            val caStorage = ContentAddressableStorage(scheme, options.cdnUrl);
+
+            return DdcClientImpl(caStorage, smartContract, options, encryptionSecretPhrase);
+        }
     }
 
     override suspend fun createBucket(balance: Long, resource: Long, clusterId: Long, bucketParams: BucketParams?): BucketCreatedEvent {
@@ -52,12 +66,12 @@ class DdcClientImpl(
         } else if (resourceChanged <= 0) {
             resourceChanged = 1 //Is it better throw Exception?
         }
-        val event = this.smartContract.bucketCreate(Balance(balance.toBigInteger()), jacksonObjectMapper().writeValueAsString(bucketParams), clusterId)
+        val event = smartContract.bucketCreate(Balance(balance.toBigInteger()), jacksonObjectMapper().writeValueAsString(bucketParams), clusterId)
         if (balance > 0) {
-            this.smartContract.accountDeposit(Balance(balance.toBigInteger()))
+            smartContract.accountDeposit(Balance(balance.toBigInteger()))
         }
 
-        val clusterStatus = this.smartContract.clusterGet(clusterId)
+        val clusterStatus = smartContract.clusterGet(clusterId)
         val bucketSize = if (clusterStatus.cluster.vnodes.isNotEmpty())
             (resourceChanged * 1000) / clusterStatus.cluster.vnodes.size
         else 0
@@ -226,4 +240,5 @@ class DdcClientImpl(
         val pieceUri = caStorage.store(bucketId, Piece(partnerEdek, tags))
         return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
     }
+
 }
