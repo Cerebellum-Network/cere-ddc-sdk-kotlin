@@ -10,12 +10,14 @@ import java.nio.file.Path
 
 class BucketContractConfig(private val abiFile: Path? = null) {
 
-    private val defaultAbiFile = "${File.separator}ddc_bucket.json"
+    private val defaultAbiFile = "src${File.separator}main${File.separator}resources${File.separator}ddc_bucket.json"
     private val hashes: MutableMap<String, String> = HashMap()
 
     suspend fun init() {
         val abiFileJson = withContext(Dispatchers.IO) {
-            abiFile?.let { JACKSON.readTree(Files.readAllBytes(it)) }
+            abiFile?.let {
+                JACKSON.readTree(Files.readAllBytes(it))
+            }
                 ?: javaClass.getResourceAsStream(defaultAbiFile)?.use { JACKSON.readTree(it) }
         }
 

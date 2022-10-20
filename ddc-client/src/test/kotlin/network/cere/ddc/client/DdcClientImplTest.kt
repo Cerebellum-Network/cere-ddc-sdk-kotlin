@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 internal class DdcClientImplTest {
 
-    private val encryptionSecretPhrase = "style banner please love bring point zebra lounge match morning list prison"
+    private val privateKey = "0x4004b8619c607297a1747dcea04e937753094616d378ee941bc880494262f552"
     private val cdnNodeUrl = "http://localhost:8080"
     private val clientOptions = ClientOptions(cdnNodeUrl)
     private val balance = 1L
@@ -15,9 +15,17 @@ internal class DdcClientImplTest {
     private val clusterId = 2L
 
     @Test
+    fun buildAndConnectClient() {
+        runBlocking {
+            val ddcClient = DdcClientImpl.buildAndConnect(clientOptions, privateKey, null)
+            assertNotNull(ddcClient)
+        }
+
+    }
+    @Test
     fun createBucket() {
         runBlocking {
-            val ddcClient = DdcClientImpl.buildAndConnect(clientOptions, encryptionSecretPhrase, null)
+            val ddcClient = DdcClientImpl.buildAndConnect(clientOptions, privateKey, null)
             val bucket = ddcClient.createBucket(balance, resource, clusterId, null)
             assertNotNull(bucket)
         }

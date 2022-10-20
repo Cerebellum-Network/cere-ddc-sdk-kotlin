@@ -46,16 +46,16 @@ class DdcClientImpl(
     companion object {
         const val ENCRYPTOR_TAG = "encryptor"
         const val MAX_BUCKET_SIZE = 5
-        suspend fun buildAndConnect(options: ClientOptions, secretPhrase: String, encryptionSecretPhrase: String?): DdcClient {
-            val encryptionSecretPhrase = encryptionSecretPhrase ?: secretPhrase;
+        suspend fun buildAndConnect(options: ClientOptions, privateKey: String, encryptionSecretPhrase: String?): DdcClient {
+            val encryptionSecretPhrase = encryptionSecretPhrase ?: privateKey
 
-            val scheme = Scheme.create(options.schemeType, secretPhrase)
+            val scheme = Scheme.create(options.schemeType, privateKey)
             val config = BlockchainConfig(options.smartContract.rpcUrl, options.smartContract.contractAddress, encryptionSecretPhrase)
             val bucketContractConfig = BucketContractConfig(options.smartContract.abi.toPath())
-            val smartContract = BucketSmartContract.buildAndConnect(config, bucketContractConfig);
-            val caStorage = ContentAddressableStorage(scheme, options.cdnUrl);
+            val smartContract = BucketSmartContract.buildAndConnect(config, bucketContractConfig)
+            val caStorage = ContentAddressableStorage(scheme, options.cdnUrl)
 
-            return DdcClientImpl(caStorage, smartContract, options, encryptionSecretPhrase);
+            return DdcClientImpl(caStorage, smartContract, options, encryptionSecretPhrase)
         }
     }
 
@@ -123,10 +123,10 @@ class DdcClientImpl(
     }
 
     private suspend fun storeEncrypted(bucketId: Long, fileOrPiece: Container, options: StoreOptions): DdcUri {
-        var dek = buildHierarchicalDekHex(masterDek, options.dekPath)
+        val dek = buildHierarchicalDekHex(masterDek, options.dekPath)
         //ToDo can be random (Nacl ScaleBox). We need to decide if we need store publickey of user who created edek or shared
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
-        var edek = box.box(dek)
+        val edek = box.box(dek)
         //ToDo need better structure to store keys
         val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.decodeToString()}"))
         val p = Piece(edek, tags)
@@ -232,11 +232,11 @@ class DdcClientImpl(
         return result.pieces
     }
 
-    override suspend fun shareData(bucketId: Long, dekPath: String, partnerBoxPublicKey: String): DdcUri {
+    override suspend fun shareData(bucketId: Long, dekPath: String, publicKeyHex: String): DdcUri {
         val dek = buildHierarchicalDekHex(masterDek, dekPath)
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
         val partnerEdek = box.box(dek)
-        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${dekPath}/${partnerBoxPublicKey}"))
+        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${dekPath}/${publicKeyHex}"))
         val pieceUri = caStorage.store(bucketId, Piece(partnerEdek, tags))
         return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
     }

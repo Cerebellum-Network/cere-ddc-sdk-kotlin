@@ -7,6 +7,13 @@ version = "unspecified"
 
 repositories {
     mavenCentral()
+    ivy("https://github.com") {
+        patternLayout {
+            artifact("[organisation]/releases/download/v[revision]/[module]-[revision].jar")
+            setM2compatible(true)
+        }
+        metadataSources { artifact() }
+    }
 }
 
 dependencies {
