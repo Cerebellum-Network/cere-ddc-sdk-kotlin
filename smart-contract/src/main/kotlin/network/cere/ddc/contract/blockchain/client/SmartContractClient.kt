@@ -153,8 +153,7 @@ class SmartContractClient(private val config: BlockchainConfig) : AutoCloseable 
         val blockHashChannel = Channel<String>(1)
 
         LOGGER.debug("Execute {} with data={}", SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND, data)
-        val subscription =
-            api.subscribe(subscribeCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await()
+        val subscription = api.subscribe(subscribeCall).orTimeout(config.timeout.toMillis(), TimeUnit.MILLISECONDS).await()
         LOGGER.debug("Returned subscription {} with data={}", SEND_TRANSACTION_AND_SUBSCRIBE_COMMAND, data)
 
         subscription.use {
