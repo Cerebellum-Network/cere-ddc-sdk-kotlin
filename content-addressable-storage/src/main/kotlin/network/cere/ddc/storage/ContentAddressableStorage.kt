@@ -211,7 +211,10 @@ class ContentAddressableStorage(
                 )
             }
 
-            val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(response.body<ByteArray>()) }
+            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
+                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
+
+            val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(pbResponse.body) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
 
             return parsePiece(PieceOuterClass.Piece.parseFrom(pbSignedPiece.piece))
