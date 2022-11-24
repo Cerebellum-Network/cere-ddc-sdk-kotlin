@@ -34,8 +34,20 @@ data class Piece (
     }
 
     fun toProto(bucketId: Long): PieceOuterClass.Piece {
-        val protoTags = tags.map { TagOuterClass.Tag.newBuilder().setKey(ByteString.copyFromUtf8(it.key)).setValue(ByteString.copyFromUtf8(it.value)).build() }.asIterable()
-        val protoLinks = links.map { LinkOuterClass.Link.newBuilder().setCid(it.cid).setName(it.name).setSize(it.size).build() }.asIterable()
-        return PieceOuterClass.Piece.newBuilder().setBucketId(bucketId.toInt()).setData(ByteString.copyFrom(data)).addAllTags(protoTags).addAllLinks(protoLinks).build()
+        val protoTags = tags.map { TagOuterClass.Tag.newBuilder()
+            .setKey(ByteString.copyFrom(it.key.toByteArray()))
+            .setValue(ByteString.copyFrom(it.value.toByteArray()))
+            .build() }.asIterable()
+        val protoLinks = links.map { LinkOuterClass.Link.newBuilder()
+            .setCid(it.cid)
+            .setName(it.name)
+            .setSize(it.size)
+            .build() }.asIterable()
+        return PieceOuterClass.Piece.newBuilder()
+            .setBucketId(bucketId.toInt())
+            .setData(ByteString.copyFrom(data))
+            .addAllTags(protoTags)
+            .addAllLinks(protoLinks)
+            .build()
     }
 }
