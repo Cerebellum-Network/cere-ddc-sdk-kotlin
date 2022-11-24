@@ -15,15 +15,16 @@ import org.junit.jupiter.api.Test
 
 internal class ContentAddressableStorageIT {
 
-    private val privateKey = "0x4aa75e0a966b88cfd03e7f611d42ca53adaa61fdd8ce229e3a26293254ead36a"
+    private val privateKey = "0x2cf8a6819aa7f2a2e7a62ce8cf0dca2aca48d87b2001652de779f43fecbc5a03"
     private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = ContentAddressableStorage(scheme, cdnNodeUrl)
+
     @Test
     fun `Store and read`() {
         runBlocking {
             //given
-            val bucketId = 503L
+            val bucketId = 1L
             val piece = Piece(
                 data = "Hello world!".toByteArray(),
                 tags = listOf(Tag(key = "Creator", value = "Jack"))
@@ -31,10 +32,10 @@ internal class ContentAddressableStorageIT {
 
             //when
             val pieceUrl = testSubject.store(bucketId, piece)
-            val savedPiece = testSubject.read(bucketId, pieceUrl.cid)
 
             //then
-            pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
+            val savedPiece = testSubject.read(bucketId, pieceUrl.cid, null)
+
             savedPiece shouldBeEqualToComparingFields piece
         }
     }
@@ -56,7 +57,7 @@ internal class ContentAddressableStorageIT {
 
             //then
             pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
-            savedPiece.data contentEquals  piece.data
+            savedPiece.data contentEquals piece.data
             savedPiece.tags shouldContainAll listOf(Tag(key = "Creator", value = "Jack"), Tag(key = "dekPath", value = "/some/path"))
         }
     }
