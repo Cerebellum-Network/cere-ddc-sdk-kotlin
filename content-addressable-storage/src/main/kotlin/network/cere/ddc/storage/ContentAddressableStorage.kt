@@ -13,8 +13,7 @@ import network.cere.ddc.core.encryption.Cipher
 import network.cere.ddc.core.encryption.EncryptedData
 import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.encryption.NaclCipher
-import network.cere.ddc.core.extension.hexToBytes
-import network.cere.ddc.core.extension.retry
+import network.cere.ddc.core.extension.*
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.core.uri.Protocol
@@ -25,7 +24,7 @@ import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchResult
 import network.cere.ddc.storage.domain.StoreRequest
 import network.cere.ddc.storage.domain.Tag
-import org.komputing.khex.extensions.toHexString
+import org.komputing.khex.extensions.*
 import pb.PieceOuterClass
 import pb.QueryOuterClass
 import pb.RequestOuterClass
@@ -38,7 +37,6 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InvalidObjectException
 import java.net.URL
-import java.nio.ByteBuffer
 import java.util.*
 
 
@@ -50,7 +48,6 @@ class ContentAddressableStorage(
     val cipher: Cipher = NaclCipher()
 ) {
     companion object {
-        const val BASE_PATH = "/api/rest/pieces"
         const val BASE_PATH_PIECES = "/api/v1/rest/pieces"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"
@@ -69,49 +66,52 @@ class ContentAddressableStorage(
     suspend fun store(bucketId: Long, piece: Piece): DdcUri {
         val request = buildStoreRequest(bucketId, piece)
 
-
-        val response = sendRequest {
+        val response = sendRequest() {
             method = HttpMethod.parse(request.method)
             body = request.body
-            headers.append("Connection", "close")
         }
         val responseData = response.content
         // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())
-
-        if (response.status != HttpStatusCode.OK) {
+        if (response.status.value/100 != 2) {
             throw Exception("Failed to store. Response: status=${protoResponse.responseCode}, body=${protoResponse.body.toStringUtf8()}")
         }
         return DdcUri.Builder().protocol(Protocol.IPIECE).bucketId(bucketId).cid(request.cid).build()
     }
 
-    private suspend fun buildStoreRequest(bucketId: Long, piece: Piece): StoreRequest {
+    private fun buildStoreRequest(bucketId: Long, piece: Piece): StoreRequest {
         val pbPiece: PieceOuterClass.Piece = piece.toProto(bucketId)
         val cid = cidBuilder.build(pbPiece.toByteArray())
-        val timestamp = Date()
-        val signature = scheme.sign("<Bytes>DDC store ${cid} at ${timestamp}</Bytes>".toByteArray())
+        val timestamp = Date(2022, 10, 10)
+        println("timestamp " + timestamp.time)
+        val signatureString = "<Bytes>DDC store $cid at 2022-11-09T20:00:00.000Z</Bytes>"
+        println("signatureString " + signatureString)
+        val signature = scheme.sign(signatureString.toByteArray())
         val pbSignature = SignatureOuterClass.Signature
             .newBuilder()
             .setValue(ByteString.copyFromUtf8(signature))
             .setScheme(scheme.name)
-            .setSigner(ByteString.copyFromUtf8(scheme.publicKeyHex))
-            .build()//timestamp, multiHashType?
+            .setSigner(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .setTimestamp(1668024000000)
+            .build()
         val pbSignedPiece: SignedPieceOuterClass.SignedPiece = SignedPieceOuterClass.SignedPiece
             .newBuilder()
-            .setPiece(ByteString.copyFrom(pbPiece.toByteArray()))
+            .setPiece(pbPiece.toByteString())
             .setSignature(pbSignature)
             .build()
 
-        val requestSignature = signRequest(RequestOuterClass.Request.newBuilder().setBody(pbSignedPiece.toByteString()).build(), BASE_PATH_PIECES, HttpMethod.Put)
+        val outerRequest = RequestOuterClass.Request.newBuilder().setBody(ByteString.copyFrom(pbSignedPiece.toByteArray())).build()
+
+        val requestSignature = signRequest(outerRequest, BASE_PATH_PIECES, HttpMethod.Put)
 
         val request = RequestOuterClass.Request.newBuilder()
             .setBody(pbSignedPiece.toByteString())
             .setScheme(scheme.name)
-            .setPublicKey(ByteString.copyFromUtf8(scheme.publicKeyHex))
-            .setMultiHashType(0)
-            .setSignature(ByteString.copyFromUtf8(requestSignature)).build()
+            .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .setSignature(ByteString.copyFrom(requestSignature.hexToBytes()))
+            .build()
 
-        // @ts-ignore
+         // @ts-ignore
         return StoreRequest(request.toByteArray(), cid, HttpMethod.Put.value, BASE_PATH_PIECES)
     }
 
@@ -119,9 +119,9 @@ class ContentAddressableStorage(
         val cid = cidBuilder.build(
             concatArrays(
                 getPath(path, method),
-                intToBytes(request.body.size()),
+                specialIntToBytes(request.body.size()),
                 request.body.toByteArray(),
-                intToBytes(request.sessionId.size()),
+                specialIntToBytes(request.sessionId.size()),
                 request.sessionId.toByteArray(),
             ),
         )
@@ -139,15 +139,29 @@ class ContentAddressableStorage(
         val query = if (url.query == null) "" else "?" + url.query.split('&').filter { it.split('=')[0] != "data" }.reduce { str1, str2 -> str1 + str2 }
         val link = "${url.path}${query}"
         return concatArrays(
-            intToBytes(method.value.length),//?
+            specialIntToBytes(method.value.length),
             method.value.toByteArray(),
-            intToBytes(link.length),
+            specialIntToBytes(link.length),
             link.toByteArray(),
         )
     }
 
-    fun intToBytes(i: Int): ByteArray =
-        ByteBuffer.allocate(Int.SIZE_BYTES).putInt(i).array()
+    fun specialIntToBytes(i: Int): ByteArray {
+        var secondByte : Byte = 0
+        var i1 = i
+        if (i1 >= 128){
+            secondByte++
+        }
+        while(i1 >= 256){
+            secondByte++
+            i1-=128
+        }
+        return if (secondByte.toInt() == 0){
+            byteArrayOf(i1.toUByte().toByte())
+        } else{
+            byteArrayOf(i1.toUByte().toByte(), secondByte)
+        }
+    }
 
     suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): DdcUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
@@ -228,7 +242,7 @@ class ContentAddressableStorage(
     private suspend fun sendRequest(path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
         val url = buildString {
             append(cdnNodeUrl)
-            append(BASE_PATH)
+            append(BASE_PATH_PIECES)
             path.takeIf(String::isNotEmpty)?.also { append("/").append(path) }
         }
         val request = HttpRequestBuilder().apply {
