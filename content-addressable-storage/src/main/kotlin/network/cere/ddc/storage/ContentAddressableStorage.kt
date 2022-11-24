@@ -77,7 +77,7 @@ class ContentAddressableStorage(
         val responseData = response.content
         // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())
-        if (response.status.value/100 != 2) {
+        if (response.status.value / 100 != 2) {
             throw Exception("Failed to store. Response: status=${protoResponse.responseCode}, body=${protoResponse.body.toStringUtf8()}")
         }
         return DdcUri.Builder().protocol(Protocol.IPIECE).bucketId(bucketId).cid(request.cid).build()
@@ -114,7 +114,7 @@ class ContentAddressableStorage(
             .setSignature(ByteString.copyFrom(requestSignature.hexToBytes()))
             .build()
 
-         // @ts-ignore
+        // @ts-ignore
         return StoreRequest(request.toByteArray(), cid, HttpMethod.Put.value, BASE_PATH_PIECES)
     }
 
@@ -150,18 +150,18 @@ class ContentAddressableStorage(
     }
 
     fun specialIntToBytes(i: Int): ByteArray {
-        var secondByte : Byte = 0
+        var secondByte: Byte = 0
         var i1 = i
-        if (i1 >= 128){
+        if (i1 >= 128) {
             secondByte++
         }
-        while(i1 >= 256){
+        while (i1 >= 256) {
             secondByte++
-            i1-=128
+            i1 -= 128
         }
-        return if (secondByte.toInt() == 0){
+        return if (secondByte.toInt() == 0) {
             byteArrayOf(i1.toUByte().toByte())
-        } else{
+        } else {
             byteArrayOf(i1.toUByte().toByte(), secondByte)
         }
     }
@@ -174,20 +174,35 @@ class ContentAddressableStorage(
 
     //TODO think about overload read method during writing DDC client
     suspend fun readDecrypted(bucketId: Long, cid: String, dek: ByteArray): Piece {
-        val piece = read(bucketId, cid)
+        val piece = read(bucketId, cid, null)
         val nonce = piece.tags.first { it.key == NONCE_TAG }.value.hexToBytes()
         val decryptedData = cipher.decrypt(EncryptedData(piece.data, nonce), dek)
         return piece.copy(data = decryptedData)
     }
 
-    suspend fun read(bucketId: Long, cid: String): Piece {
+    suspend fun read(bucketId: Long, cid: String, session: ByteArray?): Piece {
         return retry(
             clientConfig.retryTimes,
             clientConfig.retryBackOff,
             { it is IOException && it !is InvalidObjectException }) {
+            val request = if (session == null) {
+                val requestSignature = signRequest(RequestOuterClass.Request.newBuilder().build(), "${BASE_PATH_PIECES}/${cid}?bucketId=${bucketId}")
+                RequestOuterClass.Request.newBuilder()
+                    .setScheme(scheme.name)
+                    .setSignature(ByteString.copyFrom(requestSignature.hexToBytes()))
+                    .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+                    .build()
+            } else {
+                RequestOuterClass.Request.newBuilder()
+                    .setScheme(scheme.name)
+                    .setSessionId(ByteString.copyFrom(session))
+                    .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+                    .build()
+            }
             val response = sendRequest(cid) {
                 method = HttpMethod.Get
                 parameter("bucketId", bucketId)
+                parameter("data", request.toByteArray().encodeBase64())
             }
 
             if (HttpStatusCode.OK != response.status) {
