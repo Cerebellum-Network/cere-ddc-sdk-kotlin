@@ -37,6 +37,10 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InvalidObjectException
 import java.net.URL
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -82,17 +86,16 @@ class ContentAddressableStorage(
     private fun buildStoreRequest(bucketId: Long, piece: Piece): StoreRequest {
         val pbPiece: PieceOuterClass.Piece = piece.toProto(bucketId)
         val cid = cidBuilder.build(pbPiece.toByteArray())
-        val timestamp = Date(2022, 10, 10)
-        println("timestamp " + timestamp.time)
-        val signatureString = "<Bytes>DDC store $cid at 2022-11-09T20:00:00.000Z</Bytes>"
-        println("signatureString " + signatureString)
+        val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
+        val stringTimestamp = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
+        val signatureString = "<Bytes>DDC store $cid at $stringTimestamp</Bytes>"
         val signature = scheme.sign(signatureString.toByteArray())
         val pbSignature = SignatureOuterClass.Signature
             .newBuilder()
             .setValue(ByteString.copyFromUtf8(signature))
             .setScheme(scheme.name)
             .setSigner(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
-            .setTimestamp(1668024000000)
+            .setTimestamp(timestamp.toInstant().toEpochMilli())
             .build()
         val pbSignedPiece: SignedPieceOuterClass.SignedPiece = SignedPieceOuterClass.SignedPiece
             .newBuilder()
