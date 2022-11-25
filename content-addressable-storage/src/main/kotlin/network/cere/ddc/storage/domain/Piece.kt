@@ -37,6 +37,7 @@ data class Piece (
         val protoTags = tags.map { TagOuterClass.Tag.newBuilder()
             .setKey(ByteString.copyFrom(it.key.toByteArray()))
             .setValue(ByteString.copyFrom(it.value.toByteArray()))
+            .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
             .build() }.asIterable()
         val protoLinks = links.map { LinkOuterClass.Link.newBuilder()
             .setCid(it.cid)

@@ -10,6 +10,7 @@ import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
+import network.cere.ddc.storage.domain.SearchType
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
 
@@ -93,6 +94,23 @@ internal class ContentAddressableStorageIT {
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(data = byteArrayOf(), cid = pieceUrl.cid))
+        }
+    }
+
+    @Test
+    fun `Search not searchable`() {
+        runBlocking {
+            //given
+            val bucketId = 2L
+            val tags = listOf(Tag(key = "Search2", value = "test2", SearchType.NOT_SEARCHABLE))
+            val piece = Piece(data = "Hello world!".toByteArray(), tags = tags)
+            val pieceUrl = testSubject.store(bucketId, piece)
+
+            //when
+            val result = testSubject.search(Query(bucketId, tags), null)
+
+            //then
+            result.pieces.isEmpty() shouldBe true
         }
     }
 }
