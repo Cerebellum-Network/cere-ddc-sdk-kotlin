@@ -23,6 +23,7 @@ import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchResult
+import network.cere.ddc.storage.domain.SearchType
 import network.cere.ddc.storage.domain.StoreRequest
 import network.cere.ddc.storage.domain.Tag
 import org.komputing.khex.extensions.*
@@ -56,6 +57,8 @@ class ContentAddressableStorage(
         const val BASE_PATH_PIECES = "/api/v1/rest/pieces"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"
+        const val READ_PARSE_ERROR_MESSAGE = "Couldn't parse read response body to SignedPiece."
+        const val SEARCH_PARSE_ERROR_MESSAGE = "Couldn't parse search response body to SearchResult."
     }
 
     private val client: HttpClient = HttpClient().config {
@@ -213,10 +216,10 @@ class ContentAddressableStorage(
             }
 
             val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
-                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
+                .getOrElse { throw InvalidObjectException(READ_PARSE_ERROR_MESSAGE) }
 
             val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(pbResponse.body) }
-                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
+                .getOrElse { throw InvalidObjectException(READ_PARSE_ERROR_MESSAGE) }
 
             return parsePiece(PieceOuterClass.Piece.parseFrom(pbSignedPiece.piece))
         }
@@ -226,7 +229,11 @@ class ContentAddressableStorage(
     suspend fun search(query: Query, session: ByteArray?): SearchResult {
         val pbQuery = QueryOuterClass.Query.newBuilder()
             .setBucketId(query.bucketId.toInt())
-            .addAllTags(query.tags.map { TagOuterClass.Tag.newBuilder().setKey(ByteString.copyFromUtf8(it.key)).setValue(ByteString.copyFromUtf8(it.value)).build() })
+            .addAllTags(query.tags.map { TagOuterClass.Tag.newBuilder()
+                .setKey(ByteString.copyFromUtf8(it.key))
+                .setValue(ByteString.copyFromUtf8(it.value))
+                .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
+                .build() })
             .setSkipData(query.skipData)
             .build()
         val encodedQuery = Base58.encode(pbQuery.toByteArray())
@@ -261,10 +268,10 @@ class ContentAddressableStorage(
             }
 
             val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
-                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
+                .getOrElse { throw InvalidObjectException(SEARCH_PARSE_ERROR_MESSAGE) }
 
             val pbSearchResult = runCatching { SearchResultOuterClass.SearchResult.parseFrom(pbResponse.body) }
-                .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
+                .getOrElse { throw InvalidObjectException(SEARCH_PARSE_ERROR_MESSAGE) }
 
             return SearchResult(
                 pieces = pbSearchResult.searchedPiecesList.map { sp -> parsePiece(PieceOuterClass.Piece.parseFrom(sp.signedPiece.piece), sp.cid) }
@@ -274,7 +281,8 @@ class ContentAddressableStorage(
 
     private fun parsePiece(pbPiece: PieceOuterClass.Piece, cid: String? = null) = Piece(
         data = pbPiece.data.toByteArray() ?: byteArrayOf(),
-        tags = pbPiece.tagsList.map { Tag(it.key.toStringUtf8(), it.value.toStringUtf8()) },
+        tags = pbPiece.tagsList.map {
+            Tag(it.key.toStringUtf8(), it.value.toStringUtf8(), SearchType.valueOf(it.searchable.name))},
         links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) },
         cid = cid
     )
