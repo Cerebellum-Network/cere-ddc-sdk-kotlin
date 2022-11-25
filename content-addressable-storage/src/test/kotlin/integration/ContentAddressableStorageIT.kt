@@ -72,7 +72,7 @@ internal class ContentAddressableStorageIT {
             val pieceUrl = testSubject.store(bucketId, piece)
 
             //when
-            val result = testSubject.search(Query(bucketId, tags))
+            val result = testSubject.search(Query(bucketId, tags), null)
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(cid = pieceUrl.cid))
@@ -89,7 +89,7 @@ internal class ContentAddressableStorageIT {
             val pieceUrl = testSubject.store(bucketId, piece)
 
             //when
-            val result = testSubject.search(Query(bucketId, tags, skipData = true))
+            val result = testSubject.search(Query(bucketId, tags, skipData = true), null)
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(data = byteArrayOf(), cid = pieceUrl.cid))

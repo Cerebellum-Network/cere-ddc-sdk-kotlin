@@ -1,6 +1,7 @@
 package network.cere.ddc.storage
 
 import com.google.protobuf.ByteString
+import io.ipfs.multibase.Base58
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -222,20 +223,35 @@ class ContentAddressableStorage(
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun search(query: Query): SearchResult {
+    suspend fun search(query: Query, session: ByteArray?): SearchResult {
         val pbQuery = QueryOuterClass.Query.newBuilder()
             .setBucketId(query.bucketId.toInt())
             .addAllTags(query.tags.map { TagOuterClass.Tag.newBuilder().setKey(ByteString.copyFromUtf8(it.key)).setValue(ByteString.copyFromUtf8(it.value)).build() })
             .setSkipData(query.skipData)
             .build()
-
+        val encodedQuery = Base58.encode(pbQuery.toByteArray())
+        val request = if (session == null) {
+            val requestSignature = signRequest(RequestOuterClass.Request.newBuilder().build(), "${BASE_PATH_PIECES}?query=${encodedQuery}")
+            RequestOuterClass.Request.newBuilder()
+                .setScheme(scheme.name)
+                .setSignature(ByteString.copyFrom(requestSignature.hexToBytes()))
+                .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+                .build()
+        } else {
+            RequestOuterClass.Request.newBuilder()
+                .setScheme(scheme.name)
+                .setSessionId(ByteString.copyFrom(session))
+                .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+                .build()
+        }
         return retry(
             clientConfig.retryTimes,
             clientConfig.retryBackOff,
             { it is IOException && it !is InvalidObjectException }) {
             val response = sendRequest {
                 method = HttpMethod.Get
-                body = pbQuery.toByteArray()
+                parameter("query", encodedQuery)
+                parameter("data", request.toByteArray().encodeBase64())
             }
 
             if (HttpStatusCode.OK != response.status) {
@@ -244,7 +260,10 @@ class ContentAddressableStorage(
                 )
             }
 
-            val pbSearchResult = runCatching { SearchResultOuterClass.SearchResult.parseFrom(response.body<ByteArray>()) }
+            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
+                .getOrElse { throw InvalidObjectException("Couldn't parse read response body to SignedPiece.") }
+
+            val pbSearchResult = runCatching { SearchResultOuterClass.SearchResult.parseFrom(pbResponse.body) }
                 .getOrElse { throw InvalidObjectException("Couldn't parse search response body to SearchResult.") }
 
             return SearchResult(
