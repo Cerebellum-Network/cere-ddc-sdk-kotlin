@@ -1,18 +1,21 @@
 package integration
 
-import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
-import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
+import network.cere.ddc.storage.domain.CreateSessionParams
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchType
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 internal class ContentAddressableStorageIT {
 
@@ -42,7 +45,7 @@ internal class ContentAddressableStorageIT {
     }
 
     @Test
-    fun `Encrypted store and read`() {
+    fun `Store and read with session`() {
         runBlocking {
             //given
             val bucketId = 1L
@@ -50,16 +53,18 @@ internal class ContentAddressableStorageIT {
                 data = "Hello world!".toByteArray(),
                 tags = listOf(Tag(key = "Creator", value = "Jack"))
             )
-            val encryptionOptions = EncryptionOptions("/some/path", "11111111111111111111111111111111".toByteArray())
 
             //when
-            val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
-            val savedPiece = testSubject.readDecrypted(bucketId, pieceUrl.cid, encryptionOptions.dek)
+            val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
+            timestamp.plusDays(1)
+            val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toInstant().toEpochMilli(), bucketId))
+            val storeRequest = testSubject.store(bucketId, piece)
 
-            //then
-            pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
-            savedPiece.data contentEquals piece.data
-            savedPiece.tags shouldContainAll listOf(Tag(key = "Creator", value = "Jack"), Tag(key = "dekPath", value = "/some/path"))
+            //thenSearchable
+            storeRequest.cid shouldNotBe null
+
+            val readRequest = testSubject.read(bucketId, storeRequest.cid, session)
+            readRequest.data shouldBe piece.data
         }
     }
 
@@ -103,8 +108,6 @@ internal class ContentAddressableStorageIT {
             //given
             val bucketId = 2L
             val tags = listOf(Tag(key = "Search2", value = "test2", SearchType.NOT_SEARCHABLE))
-            val piece = Piece(data = "Hello world!".toByteArray(), tags = tags)
-            val pieceUrl = testSubject.store(bucketId, piece)
 
             //when
             val result = testSubject.search(Query(bucketId, tags), null)

@@ -19,6 +19,7 @@ import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.storage.config.ClientConfig
+import network.cere.ddc.storage.domain.CreateSessionParams
 import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
@@ -32,6 +33,7 @@ import pb.QueryOuterClass
 import pb.RequestOuterClass
 import pb.ResponseOuterClass
 import pb.SearchResultOuterClass
+import pb.SessionStatusOuterClass
 import pb.SignatureOuterClass
 import pb.SignedPieceOuterClass
 import pb.TagOuterClass
@@ -55,6 +57,7 @@ class ContentAddressableStorage(
 ) {
     companion object {
         const val BASE_PATH_PIECES = "/api/v1/rest/pieces"
+        const val BASE_PATH_SESSION = "/api/v1/rest/session"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"
         const val READ_PARSE_ERROR_MESSAGE = "Couldn't parse read response body to SignedPiece."
@@ -74,14 +77,14 @@ class ContentAddressableStorage(
     suspend fun store(bucketId: Long, piece: Piece): DdcUri {
         val request = buildStoreRequest(bucketId, piece)
 
-        val response = sendRequest() {
+        val response = sendRequest(BASE_PATH_PIECES) {
             method = HttpMethod.parse(request.method)
             body = request.body
         }
         val responseData = response.content
         // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())
-        if (response.status.value / 100 != 2) {
+        if (!response.status.isSuccess()) {
             throw Exception("Failed to store. Response: status=${protoResponse.responseCode}, body=${protoResponse.body.toStringUtf8()}")
         }
         return DdcUri.Builder().protocol(Protocol.IPIECE).bucketId(bucketId).cid(request.cid).build()
@@ -203,13 +206,13 @@ class ContentAddressableStorage(
                     .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
                     .build()
             }
-            val response = sendRequest(cid) {
+            val response = sendRequest(BASE_PATH_PIECES, cid) {
                 method = HttpMethod.Get
                 parameter("bucketId", bucketId)
                 parameter("data", request.toByteArray().encodeBase64())
             }
 
-            if (HttpStatusCode.OK != response.status) {
+            if (!response.status.isSuccess()) {
                 throw RuntimeException(
                     "Failed to read. Response: status='${response.status}' body=${response.body<String>()}"
                 )
@@ -229,11 +232,13 @@ class ContentAddressableStorage(
     suspend fun search(query: Query, session: ByteArray?): SearchResult {
         val pbQuery = QueryOuterClass.Query.newBuilder()
             .setBucketId(query.bucketId.toInt())
-            .addAllTags(query.tags.map { TagOuterClass.Tag.newBuilder()
-                .setKey(ByteString.copyFromUtf8(it.key))
-                .setValue(ByteString.copyFromUtf8(it.value))
-                .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
-                .build() })
+            .addAllTags(query.tags.map {
+                TagOuterClass.Tag.newBuilder()
+                    .setKey(ByteString.copyFromUtf8(it.key))
+                    .setValue(ByteString.copyFromUtf8(it.value))
+                    .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
+                    .build()
+            })
             .setSkipData(query.skipData)
             .build()
         val encodedQuery = Base58.encode(pbQuery.toByteArray())
@@ -255,13 +260,13 @@ class ContentAddressableStorage(
             clientConfig.retryTimes,
             clientConfig.retryBackOff,
             { it is IOException && it !is InvalidObjectException }) {
-            val response = sendRequest {
+            val response = sendRequest(BASE_PATH_PIECES) {
                 method = HttpMethod.Get
                 parameter("query", encodedQuery)
                 parameter("data", request.toByteArray().encodeBase64())
             }
 
-            if (HttpStatusCode.OK != response.status) {
+            if (!response.status.isSuccess()) {
                 throw RuntimeException(
                     "Failed to search. Response: status='${response.status}' body=${response.body<String>()}"
                 )
@@ -282,15 +287,16 @@ class ContentAddressableStorage(
     private fun parsePiece(pbPiece: PieceOuterClass.Piece, cid: String? = null) = Piece(
         data = pbPiece.data.toByteArray() ?: byteArrayOf(),
         tags = pbPiece.tagsList.map {
-            Tag(it.key.toStringUtf8(), it.value.toStringUtf8(), SearchType.valueOf(it.searchable.name))},
+            Tag(it.key.toStringUtf8(), it.value.toStringUtf8(), SearchType.valueOf(it.searchable.name))
+        },
         links = pbPiece.linksList.map { Link(it.cid, it.size, it.name) },
         cid = cid
     )
 
-    private suspend fun sendRequest(path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
+    private suspend fun sendRequest(apiUrl: String, path: String = "", block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
         val url = buildString {
             append(cdnNodeUrl)
-            append(BASE_PATH_PIECES)
+            append(apiUrl)
             path.takeIf(String::isNotEmpty)?.also { append("/").append(path) }
         }
         val request = HttpRequestBuilder().apply {
@@ -302,5 +308,53 @@ class ContentAddressableStorage(
                 val error = it.message?.let { ", error='$it'" } ?: ""
                 throw IOException("Couldn't send request url='$url', method='${request.method.value}$error")
             }
+    }
+
+    @OptIn(InternalAPI::class)
+    suspend fun createSession(createSessionParams: CreateSessionParams): ByteArray {
+        val sessionId = UUID.randomUUID().toString().toByteArray().copyOf(21)
+        val sessionStatus = SessionStatusOuterClass.SessionStatus.newBuilder()
+            .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .setGas(createSessionParams.gas)
+            .setSessionId(ByteString.copyFrom(sessionId))
+            .setBucketId(createSessionParams.bucketId.toInt())
+            .setEndOfEpoch(createSessionParams.endOfEpoch)
+            .build()
+
+        val signature = signRequest(
+            RequestOuterClass.Request.newBuilder()
+                .setBody(sessionStatus.toByteString())
+                .setScheme(scheme.name)
+                .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+                .build(),
+            BASE_PATH_SESSION,
+            HttpMethod.Post,
+        )
+
+        val request = RequestOuterClass.Request.newBuilder()
+            .setBody(sessionStatus.toByteString())
+            .setScheme(scheme.name)
+            .setSignature(ByteString.copyFrom(signature.hexToBytes()))
+            .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .build()
+
+        retry(
+            clientConfig.retryTimes,
+            clientConfig.retryBackOff,
+            { it is IOException && it !is InvalidObjectException }) {
+
+            val response = sendRequest(BASE_PATH_SESSION) {
+                method = HttpMethod.Post
+                body = request.toByteArray()
+            }
+
+            if (!response.status.isSuccess()) {
+                throw RuntimeException(
+                    "Failed to create session. Response: status='${response.status}' body=${response.body<String>()}"
+                )
+            }
+        }
+
+        return sessionId
     }
 }
