@@ -15,16 +15,15 @@ import org.junit.jupiter.api.Test
 
 internal class ContentAddressableStorageIT {
 
-    private val privateKey = "0x2cf8a6819aa7f2a2e7a62ce8cf0dca2aca48d87b2001652de779f43fecbc5a03"
+    private val privateKey = "0x4aa75e0a966b88cfd03e7f611d42ca53adaa61fdd8ce229e3a26293254ead36a"
     private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = ContentAddressableStorage(scheme, cdnNodeUrl)
-
     @Test
     fun `Store and read`() {
         runBlocking {
             //given
-            val bucketId = 1L
+            val bucketId = 503L
             val piece = Piece(
                 data = "Hello world!".toByteArray(),
                 tags = listOf(Tag(key = "Creator", value = "Jack"))
