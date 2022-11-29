@@ -9,7 +9,7 @@ on:
       - main
 jobs:
   test:
-    runs-on: [self-hosted, cere-network-large-workers]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
         uses: actions/checkout@master
