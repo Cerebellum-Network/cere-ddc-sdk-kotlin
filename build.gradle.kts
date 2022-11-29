@@ -22,7 +22,7 @@ subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "maven")
     apply(plugin = "idea")
-    apply(plugin = "docker-compose")
+//    apply(plugin = "docker-compose")
 
     afterEvaluate {
         dependencies {
@@ -64,6 +64,7 @@ subprojects {
 
     dockerCompose {
         isRequiredBy(tasks.test)
+        useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
     }
 }
 
