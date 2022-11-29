@@ -15,6 +15,8 @@ import network.cere.ddc.core.encryption.NaclCipher
 import network.cere.ddc.core.extension.hexToBytes
 import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.core.uri.DdcUri
+import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.proto.Storage
 import network.cere.ddc.storage.config.ClientConfig
 import network.cere.ddc.storage.domain.Link
@@ -22,10 +24,14 @@ import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.PieceUri
 import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchResult
+import network.cere.ddc.storage.domain.StoreRequest
 import network.cere.ddc.storage.domain.Tag
 import org.komputing.khex.extensions.toHexString
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InvalidObjectException
+import java.net.URL
+import java.util.*
 
 
 class ContentAddressableStorage(
@@ -33,10 +39,11 @@ class ContentAddressableStorage(
     private val cdnNodeUrl: String,
     private val clientConfig: ClientConfig = ClientConfig(),
     private val cidBuilder: CidBuilder = CidBuilder(),
-    private val cipher: Cipher = NaclCipher()
+    val cipher: Cipher = NaclCipher()
 ) {
-    private companion object {
+    companion object {
         const val BASE_PATH = "/api/rest/pieces"
+        const val BASE_PATH_PIECES = "/api/v1/rest/pieces"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"
     }
@@ -51,7 +58,11 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    suspend fun store(bucketId: Long, piece: Piece): PieceUri {
+    suspend fun store(bucketId: Long, piece: Piece, sessionId: ByteArray?): DdcUri {
+        val request = buildStoreRequest(bucketId, piece, sessionId);
+        
+        
+        
         val pbPiece = Storage.Piece.newBuilder()
             .setBucketId(bucketId)
             .setData(ByteString.copyFrom(piece.data))
@@ -87,11 +98,71 @@ class ContentAddressableStorage(
                 )
             }
 
-            return PieceUri(bucketId, cid)
+            return DdcUri.Builder().protocol(Protocol.IPIECE).bucketId(bucketId).cid(cid).build()
         }
     }
 
-    suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): PieceUri {
+    private suspend fun buildStoreRequest(bucketId: Long, piece: Piece, sessionId: ByteArray?): StoreRequest {
+        val pbPiece: Storage.Piece = piece.toProto(bucketId)
+        val cid =  cidBuilder.build(pbPiece.toByteArray())
+        val timestamp = Date()
+        val signature =  scheme.sign("<Bytes>DDC store ${cid} at ${timestamp}</Bytes>".toByteArray())
+        val pbSignature = Storage.Signature.newBuilder().setValue(signature).setScheme(scheme.name).setSigner(scheme.publicKeyHex).build()//timestamp, multiHashType?
+        val pbSignedPiece: Storage.SignedPiece = Storage.SignedPiece.newBuilder().setPiece(pbPiece).setSignature(pbSignature).build()
+
+        val signedPieceSerial = PbSignedPiece.toBinary(pbSignedPiece);
+        val requestSignature = if (sessionId != null && sessionId.size > 0){
+            null
+        } else {
+
+            signRequest(PbRequest.create({ body: signedPieceSerial}), BASE_PATH_PIECES, HttpMethod.Put)
+        }
+
+        val request = PbRequest.create({
+            body: signedPieceSerial,
+            scheme: this.scheme.name,
+            sessionId,
+            publicKey: this.scheme.publicKey,
+            multiHashType: 0n,
+            signature: requestSignature,
+        });
+
+        // @ts-ignore
+        return {body: PbRequest.toBinary(request), cid, method: HttpMethod.Put, path: BASE_PATH_PIECES};
+    }
+
+    private suspend fun signRequest(request: PbRequest, path: String, method: HttpMethod = HttpMethod.Get): String {
+        val cid = cidBuilder.build(
+            concatArrays(
+                getPath(path, method),
+                ByteArray(encode(request.body.length)),
+                request.body,
+                ByteArray(encode(request.sessionId.length)),
+                request.sessionId,
+            ),
+        );
+        return scheme.sign("<Bytes>${cid}</Bytes>".toByteArray());
+    }
+
+    private fun concatArrays(vararg arrays: ByteArray) : ByteArray {
+        val out = ByteArrayOutputStream()
+        arrays.forEach { out.write(it) }
+        return out.toByteArray()
+    }
+
+    private fun getPath(path: String, method: HttpMethod = HttpMethod.Get): ByteArray {
+        val url = URL("${cdnNodeUrl}${path}");
+        val query = "?" + url.query.split('&').filter { it.split('=')[0] != "data" }.reduce { str1, str2 -> str1+str2 }
+        val link = "${url.path}${query}";
+        return concatArrays(
+            ByteArray(encode(method.value.length)),//?
+            method.value.toByteArray(),
+            ByteArray(encode(link.length)),
+            link.toByteArray(),
+        );
+    }
+
+    suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): DdcUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
         val newTags = mutableListOf(Tag(DEK_PATH_TAG, encryptionOptions.dekPath), Tag(NONCE_TAG, encryptedData.nonce.toHexString())) + piece.tags
         return this.store(bucketId, piece.copy(data = encryptedData.data, tags = newTags))
