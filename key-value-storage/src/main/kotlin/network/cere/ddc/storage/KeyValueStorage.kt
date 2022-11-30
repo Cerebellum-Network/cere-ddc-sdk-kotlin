@@ -44,8 +44,8 @@ class KeyValueStorage {
         )
     }
 
-    suspend fun read(bucketId: Long, key: String): List<Piece> {
-        return caStorage.search(Query(bucketId = bucketId, tags = listOf(Tag(key = keyTag, value = key))))
+    suspend fun read(bucketId: Long, key: String, session: ByteArray? = null): List<Piece> {
+        return caStorage.search(Query(bucketId = bucketId, tags = listOf(Tag(key = keyTag, value = key))), session)
             .pieces.map { p -> Piece(data = p.data, p.tags.filter { it.key != keyTag }) }
     }
 }
