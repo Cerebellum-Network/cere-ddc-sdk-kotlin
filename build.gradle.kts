@@ -65,7 +65,7 @@ subprojects {
     dockerCompose {
         isRequiredBy(tasks.test)
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
-        stopContainers = true
+        forceRecreate = true
     }
 }
 
