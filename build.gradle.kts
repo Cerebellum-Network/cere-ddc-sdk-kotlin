@@ -62,6 +62,10 @@ subprojects {
         useJUnitPlatform()
     }
 
+    tasks.composeUp {
+        dependsOn(tasks.composeDownForced)
+    }
+
     dockerCompose {
         isRequiredBy(tasks.test)
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
