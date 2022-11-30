@@ -181,13 +181,13 @@ class ContentAddressableStorage(
 
     //TODO think about overload read method during writing DDC client
     suspend fun readDecrypted(bucketId: Long, cid: String, dek: ByteArray): Piece {
-        val piece = read(bucketId, cid, null)
+        val piece = read(bucketId, cid)
         val nonce = piece.tags.first { it.key == NONCE_TAG }.value.hexToBytes()
         val decryptedData = cipher.decrypt(EncryptedData(piece.data, nonce), dek)
         return piece.copy(data = decryptedData)
     }
 
-    suspend fun read(bucketId: Long, cid: String, session: ByteArray?): Piece {
+    suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): Piece {
         return retry(
             clientConfig.retryTimes,
             clientConfig.retryBackOff,
@@ -229,7 +229,7 @@ class ContentAddressableStorage(
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun search(query: Query, session: ByteArray?): SearchResult {
+    suspend fun search(query: Query, session: ByteArray? = null): SearchResult {
         val pbQuery = QueryOuterClass.Query.newBuilder()
             .setBucketId(query.bucketId.toInt())
             .addAllTags(query.tags.map {
