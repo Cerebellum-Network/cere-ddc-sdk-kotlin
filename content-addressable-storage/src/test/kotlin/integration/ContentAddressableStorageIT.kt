@@ -38,7 +38,7 @@ internal class ContentAddressableStorageIT {
             val pieceUrl = testSubject.store(bucketId, piece)
 
             //then
-            val savedPiece = testSubject.read(bucketId, pieceUrl.cid, null)
+            val savedPiece = testSubject.read(bucketId, pieceUrl.cid)
 
             savedPiece shouldBeEqualToComparingFields piece
         }
@@ -78,7 +78,7 @@ internal class ContentAddressableStorageIT {
             val pieceUrl = testSubject.store(bucketId, piece)
 
             //when
-            val result = testSubject.search(Query(bucketId, tags), null)
+            val result = testSubject.search(Query(bucketId, tags))
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(cid = pieceUrl.cid))
@@ -95,7 +95,7 @@ internal class ContentAddressableStorageIT {
             val pieceUrl = testSubject.store(bucketId, piece)
 
             //when
-            val result = testSubject.search(Query(bucketId, tags, skipData = true), null)
+            val result = testSubject.search(Query(bucketId, tags, skipData = true))
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(data = byteArrayOf(), cid = pieceUrl.cid))
@@ -110,7 +110,7 @@ internal class ContentAddressableStorageIT {
             val tags = listOf(Tag(key = "Search2", value = "test2", SearchType.NOT_SEARCHABLE))
 
             //when
-            val result = testSubject.search(Query(bucketId, tags), null)
+            val result = testSubject.search(Query(bucketId, tags))
 
             //then
             result.pieces.isEmpty() shouldBe true
