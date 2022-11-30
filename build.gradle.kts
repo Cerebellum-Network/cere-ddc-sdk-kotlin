@@ -62,12 +62,9 @@ subprojects {
         useJUnitPlatform()
     }
 
-    tasks.composeUp {
-        dependsOn(tasks.composeDownForced)
-    }
 
     dockerCompose {
-        isRequiredBy(tasks.test)
+        isRequiredBy(tasks.compileTestKotlin)
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
         noRecreate = true
     }
