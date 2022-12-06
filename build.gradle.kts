@@ -64,9 +64,8 @@ subprojects {
 
 
     dockerCompose {
-        isRequiredBy(tasks.compileTestKotlin)
+        isRequiredBy(tasks.test)
         useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
-        noRecreate = true
     }
 }
 
