@@ -51,11 +51,11 @@ subprojects {
     val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 
     compileKotlin.kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_13.toString()
         javaParameters = true
     }
     compileTestKotlin.kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_13.toString()
     }
 
     tasks.withType<Test> {
@@ -63,10 +63,10 @@ subprojects {
     }
 
 
-    dockerCompose {
-        isRequiredBy(tasks.test)
-        useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
-    }
+//    dockerCompose {
+//        isRequiredBy(tasks.test)
+//        useComposeFiles = listOf("${rootProject.buildDir}/../docker-compose/docker-compose.yml")
+//    }
 }
 
 
