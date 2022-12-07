@@ -4,7 +4,7 @@ import com.google.protobuf.ByteString
 import io.ipfs.multibase.Base58
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.plugins.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -73,7 +73,7 @@ class ContentAddressableStorage(
         expectSuccess = false
     }
 
-    @OptIn(InternalAPI::class)
+
     suspend fun store(bucketId: Long, piece: Piece): DdcUri {
         val request = buildStoreRequest(bucketId, piece)
 
@@ -187,6 +187,7 @@ class ContentAddressableStorage(
         return piece.copy(data = decryptedData)
     }
 
+    @OptIn(InternalAPI::class)
     suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): Piece {
         return retry(
             clientConfig.retryTimes,
@@ -214,11 +215,11 @@ class ContentAddressableStorage(
 
             if (!response.status.isSuccess()) {
                 throw RuntimeException(
-                    "Failed to read. Response: status='${response.status}' body=${response.body<String>()}"
+                    "Failed to read. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
 
-            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
+            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException(READ_PARSE_ERROR_MESSAGE) }
 
             val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(pbResponse.body) }
@@ -268,11 +269,11 @@ class ContentAddressableStorage(
 
             if (!response.status.isSuccess()) {
                 throw RuntimeException(
-                    "Failed to search. Response: status='${response.status}' body=${response.body<String>()}"
+                    "Failed to search. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
 
-            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.body<ByteArray>()) }
+            val pbResponse = runCatching { ResponseOuterClass.Response.parseFrom(response.receive<ByteArray>()) }
                 .getOrElse { throw InvalidObjectException(SEARCH_PARSE_ERROR_MESSAGE) }
 
             val pbSearchResult = runCatching { SearchResultOuterClass.SearchResult.parseFrom(pbResponse.body) }
@@ -303,14 +304,14 @@ class ContentAddressableStorage(
             url(url)
             block()
         }
-        return runCatching { client.request(request) }
+        return runCatching { client.request<HttpResponse>(request) }
             .getOrElse {
                 val error = it.message?.let { ", error='$it'" } ?: ""
                 throw IOException("Couldn't send request url='$url', method='${request.method.value}$error")
             }
     }
 
-    @OptIn(InternalAPI::class)
+
     suspend fun createSession(createSessionParams: CreateSessionParams): ByteArray {
         val sessionId = UUID.randomUUID().toString().toByteArray().copyOf(21)
         val sessionStatus = SessionStatusOuterClass.SessionStatus.newBuilder()
@@ -350,7 +351,7 @@ class ContentAddressableStorage(
 
             if (!response.status.isSuccess()) {
                 throw RuntimeException(
-                    "Failed to create session. Response: status='${response.status}' body=${response.body<String>()}"
+                    "Failed to create session. Response: status='${response.status}' body=${response.receive<String>()}"
                 )
             }
         }

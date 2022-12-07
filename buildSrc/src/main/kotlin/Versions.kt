@@ -1,7 +1,7 @@
 object Versions {
     val kotlin = "1.6.10"
-    val coroutines = "1.6.4"
-    val ktor = "2.1.3"
+    val coroutines = "1.6.0"
+    val ktor = "1.6.5"
     val junit = "5.8.2"
     val kethereum = "0.85.3"
     val kotest = "5.0.1"
