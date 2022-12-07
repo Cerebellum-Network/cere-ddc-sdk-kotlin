@@ -58,6 +58,7 @@ internal class ContentAddressableStorageIT {
             val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
             timestamp.plusDays(1)
             val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toInstant().toEpochMilli(), bucketId))
+            
             val storeRequest = testSubject.store(bucketId, piece)
 
             //thenSearchable

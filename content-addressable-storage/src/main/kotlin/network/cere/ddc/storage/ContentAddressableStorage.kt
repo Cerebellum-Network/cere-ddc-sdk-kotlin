@@ -75,6 +75,7 @@ class ContentAddressableStorage(
 
 
     suspend fun store(bucketId: Long, piece: Piece): DdcUri {
+        println("---------- store started")
         val request = buildStoreRequest(bucketId, piece)
 
         val response = sendRequest(BASE_PATH_PIECES) {
@@ -84,6 +85,9 @@ class ContentAddressableStorage(
         val responseData = response.content
         // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())
+        println("---------- store response status " + response.status)
+        println("---------- store response " + response.headers)
+        println("---------- store response content " + response.content)
         if (!response.status.isSuccess()) {
             throw Exception("Failed to store. Response: status=${protoResponse.responseCode}, body=${protoResponse.body.toStringUtf8()}")
         }
@@ -189,6 +193,7 @@ class ContentAddressableStorage(
 
     @OptIn(InternalAPI::class)
     suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): Piece {
+        println("---------- read started")
         return retry(
             clientConfig.retryTimes,
             clientConfig.retryBackOff,
@@ -212,6 +217,9 @@ class ContentAddressableStorage(
                 parameter("bucketId", bucketId)
                 parameter("data", request.toByteArray().encodeBase64())
             }
+            println("---------- read response status " + response.status)
+            println("---------- read response " + response.headers)
+            println("---------- read response content " + response.content)
 
             if (!response.status.isSuccess()) {
                 throw RuntimeException(
@@ -313,6 +321,7 @@ class ContentAddressableStorage(
 
 
     suspend fun createSession(createSessionParams: CreateSessionParams): ByteArray {
+        println("---------- createSession started")
         val sessionId = UUID.randomUUID().toString().toByteArray().copyOf(21)
         val sessionStatus = SessionStatusOuterClass.SessionStatus.newBuilder()
             .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
@@ -348,6 +357,9 @@ class ContentAddressableStorage(
                 method = HttpMethod.Post
                 body = request.toByteArray()
             }
+            println("---------- createSession response status " + response.status)
+            println("---------- createSession response " + response.headers)
+            println("---------- createSession response content " + response.content)
 
             if (!response.status.isSuccess()) {
                 throw RuntimeException(
