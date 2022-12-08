@@ -191,7 +191,6 @@ class ContentAddressableStorage(
         return piece.copy(data = decryptedData)
     }
 
-    @OptIn(InternalAPI::class)
     suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): Piece {
         println("---------- read started")
         return retry(
@@ -215,7 +214,7 @@ class ContentAddressableStorage(
             val response = sendRequest(BASE_PATH_PIECES, cid) {
                 method = HttpMethod.Get
                 parameter("bucketId", bucketId)
-                parameter("data", request.toByteArray().encodeBase64())
+                parameter("data", Base64.getEncoder().encodeToString(request.toByteArray()))
             }
             println("---------- read response status " + response.status)
             println("---------- read response " + response.headers)
@@ -237,7 +236,7 @@ class ContentAddressableStorage(
         }
     }
 
-    @OptIn(InternalAPI::class)
+
     suspend fun search(query: Query, session: ByteArray? = null): SearchResult {
         val pbQuery = QueryOuterClass.Query.newBuilder()
             .setBucketId(query.bucketId.toInt())
@@ -272,7 +271,7 @@ class ContentAddressableStorage(
             val response = sendRequest(BASE_PATH_PIECES) {
                 method = HttpMethod.Get
                 parameter("query", encodedQuery)
-                parameter("data", request.toByteArray().encodeBase64())
+                parameter("data", Base64.getEncoder().encodeToString(request.toByteArray()))
             }
 
             if (!response.status.isSuccess()) {
