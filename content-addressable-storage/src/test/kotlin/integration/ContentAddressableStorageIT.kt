@@ -5,6 +5,7 @@ import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
+import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
 import network.cere.ddc.storage.domain.CreateSessionParams
@@ -112,6 +113,27 @@ internal class ContentAddressableStorageIT {
 
             //then
             result.pieces.isEmpty() shouldBe true
+        }
+    }
+
+    @Test
+    fun `Store and read encrypted`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val piece = Piece(
+                data = "Hello world!".toByteArray(),
+                tags = listOf(Tag(key = "Creator", value = "Jack"))
+            )
+            val encryptionOptions = EncryptionOptions("/", "12343333333333333333333333333333".toByteArray())
+
+            //when
+            val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
+
+            //then
+            val savedPiece = testSubject.readDecrypted(bucketId, pieceUrl.cid, encryptionOptions.dek)
+
+            savedPiece.data shouldBe piece.data
         }
     }
 }
