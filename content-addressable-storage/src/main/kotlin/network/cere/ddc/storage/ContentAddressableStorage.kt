@@ -82,6 +82,7 @@ class ContentAddressableStorage(
             method = HttpMethod.parse(request.method)
             body = request.body
         }
+        println("---------- request.body " + Arrays.toString(request.body))
         val responseData = response.content
         // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())

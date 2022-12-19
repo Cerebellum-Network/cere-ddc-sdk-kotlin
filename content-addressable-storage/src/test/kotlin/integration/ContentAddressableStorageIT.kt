@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.Arrays
 
 internal class ContentAddressableStorageIT {
 
@@ -57,7 +58,9 @@ internal class ContentAddressableStorageIT {
             //when
             val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
             timestamp.plusDays(1)
-            val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toInstant().toEpochMilli(), bucketId))
+            println("timestamp.toInstant().toEpochMilli() " + timestamp.toInstant().toEpochMilli())
+            val session = testSubject.createSession(CreateSessionParams(1000000, 1671451149249, bucketId))
+            println("!!!session " + Arrays.toString(session))
             val storeRequest = testSubject.store(bucketId, piece)
 
             //thenSearchable
