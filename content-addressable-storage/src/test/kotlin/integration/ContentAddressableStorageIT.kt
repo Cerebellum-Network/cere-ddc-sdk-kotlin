@@ -15,7 +15,6 @@ import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit.DAYS
-import java.util.Arrays
 
 internal class ContentAddressableStorageIT {
 
@@ -57,7 +56,6 @@ internal class ContentAddressableStorageIT {
             //when
             val timestamp = Instant.now().plus(1, DAYS)
             val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toEpochMilli(), bucketId))
-            println("!!!session " + Arrays.toString(session))
             val storeRequest = testSubject.store(bucketId, piece)
 
             //thenSearchable
