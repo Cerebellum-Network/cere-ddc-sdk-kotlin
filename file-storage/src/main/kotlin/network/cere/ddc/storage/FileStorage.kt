@@ -10,11 +10,16 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.signature.Scheme
+import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.storage.config.FileStorageConfig
 import network.cere.ddc.storage.domain.Link
+import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.file.ChunkData
+import network.cere.ddc.storage.file.readToChannel
 import network.cere.ddc.storage.file.writeFromChannel
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentSkipListSet
+import kotlin.io.path.name
 
 class FileStorage(
     scheme: Scheme,
@@ -25,8 +30,8 @@ class FileStorage(
 
     private val caStorage =
         ContentAddressableStorage(scheme, cdnNodeUrl, fileStorageConfig.clientConfig, cidBuilder)
-/*
-    suspend fun upload(bucketId: Long, file: Path): PieceUri = coroutineScope {
+
+    suspend fun upload(bucketId: Long, file: Path): DdcUri = coroutineScope {
         val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
         val indexedBytes = indexBytes(channelBytes)
         val linksSet = ConcurrentSkipListSet<Pair<Long, Link>>(Comparator.comparingLong { it.first })
@@ -54,7 +59,7 @@ class FileStorage(
         val links = linksSet.map { it.second }
 
         caStorage.store(bucketId, Piece(name.toByteArray(), links = links))
-    }*/
+    }
 
     suspend fun read(bucketId: Long, cid: String): ByteArray = coroutineScope {
         readToChannel(bucketId, cid).toList()

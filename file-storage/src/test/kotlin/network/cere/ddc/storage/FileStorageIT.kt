@@ -1,7 +1,11 @@
 package network.cere.ddc.storage
 
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.config.FileStorageConfig
+import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import java.nio.file.Paths
 
 internal class FileStorageIT {
@@ -13,7 +17,7 @@ internal class FileStorageIT {
         FileStorage(scheme, cdnNodeUrl, FileStorageConfig().copy(parallel = 2, chunkSizeInBytes = 2))
 
     private val path = Paths.get("src", "test", "resources", "test.txt")
-/*
+
 
     @Test
     fun `Store and read`(): Unit = runBlocking {
@@ -33,7 +37,7 @@ internal class FileStorageIT {
         //given
         val fileBytes = Files.readAllBytes(path)
         val newFile = Paths.get("src", "test", "resources", "test1.txt")
-            //Files.createTempFile("file_storage_download_test", null).toAbsolutePath()
+        //Files.createTempFile("file_storage_download_test", null).toAbsolutePath()
 
         //when
         val uri = testSubject.upload(2L, path)
@@ -43,6 +47,6 @@ internal class FileStorageIT {
         Files.readAllBytes(newFile) shouldBe fileBytes
 
     }
-*/
+
 
 }
