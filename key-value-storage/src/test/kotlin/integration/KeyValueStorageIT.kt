@@ -10,9 +10,8 @@ import network.cere.ddc.storage.domain.CreateSessionParams
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class KeyValueStorageIT {
 
@@ -21,6 +20,7 @@ internal class KeyValueStorageIT {
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = KeyValueStorage(scheme, cdnNodeUrl)
     private val caStorage = ContentAddressableStorage(scheme, cdnNodeUrl)
+    private val timestampTomorrow = Instant.now().plus(1, ChronoUnit.DAYS)
 
     @Test
     fun `Store and read`() {
@@ -39,7 +39,7 @@ internal class KeyValueStorageIT {
 
             //then
             savedPieces shouldHaveSize 1
-            savedPieces.first() shouldBeEqualToComparingFields  piece
+            savedPieces.first() shouldBeEqualToComparingFields piece
         }
     }
 
@@ -55,15 +55,13 @@ internal class KeyValueStorageIT {
             )
 
             //when
-            val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
-            timestamp.plusDays(1)
-            val session = caStorage.createSession(CreateSessionParams(1000000, timestamp.toInstant().toEpochMilli(), bucketId))
+            val session = caStorage.createSession(CreateSessionParams(1000000, timestampTomorrow.toEpochMilli(), bucketId))
             testSubject.store(bucketId, key, piece)
             val savedPieces = testSubject.read(bucketId, key, session)
 
             //then
             savedPieces shouldHaveSize 1
-            savedPieces.first() shouldBeEqualToComparingFields  piece
+            savedPieces.first() shouldBeEqualToComparingFields piece
         }
     }
 }
