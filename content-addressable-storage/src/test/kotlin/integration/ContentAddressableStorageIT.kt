@@ -13,9 +13,8 @@ import network.cere.ddc.storage.domain.Query
 import network.cere.ddc.storage.domain.SearchType
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
+import java.time.Instant
+import java.time.temporal.ChronoUnit.DAYS
 import java.util.Arrays
 
 internal class ContentAddressableStorageIT {
@@ -56,10 +55,8 @@ internal class ContentAddressableStorageIT {
             )
 
             //when
-            val timestamp = OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC)
-            timestamp.plusDays(1)
-            println("timestamp.toInstant().toEpochMilli() " + timestamp.toInstant().toEpochMilli())
-            val session = testSubject.createSession(CreateSessionParams(1000000, 1671451149249, bucketId))
+            val timestamp = Instant.now().plus(1, DAYS)
+            val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toEpochMilli(), bucketId))
             println("!!!session " + Arrays.toString(session))
             val storeRequest = testSubject.store(bucketId, piece)
 
