@@ -6,11 +6,11 @@ import pb.PieceOuterClass
 import pb.TagOuterClass
 
 data class Piece (
-    override var data: ByteArray,
-    override val tags: List<Tag> = listOf(),
+    var data: ByteArray,
+    val tags: List<Tag> = listOf(),
     val links: List<Link> = listOf(),
-    override val cid: String? = null
-): Container {
+    val cid: String? = null
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

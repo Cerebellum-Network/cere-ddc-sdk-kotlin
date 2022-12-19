@@ -82,7 +82,6 @@ class ContentAddressableStorage(
             body = request.body
         }
         val responseData = response.content
-        // @ts-ignore
         val protoResponse = ResponseOuterClass.Response.parseFrom(responseData.toByteArray())
         if (!response.status.isSuccess()) {
             throw Exception("Failed to store. Response: status=${protoResponse.responseCode}, body=${protoResponse.body.toStringUtf8()}")
@@ -121,7 +120,6 @@ class ContentAddressableStorage(
             .setSignature(ByteString.copyFrom(requestSignature.hexToBytes()))
             .build()
 
-        // @ts-ignore
         return StoreRequest(request.toByteArray(), cid, HttpMethod.Put.value, BASE_PATH_PIECES)
     }
 

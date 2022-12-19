@@ -22,6 +22,7 @@ internal class ContentAddressableStorageIT {
     private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = ContentAddressableStorage(scheme, cdnNodeUrl)
+    private val timestampTomorrow = Instant.now().plus(1, DAYS)
 
     @Test
     fun `Store and read`() {
@@ -54,8 +55,7 @@ internal class ContentAddressableStorageIT {
             )
 
             //when
-            val timestamp = Instant.now().plus(1, DAYS)
-            val session = testSubject.createSession(CreateSessionParams(1000000, timestamp.toEpochMilli(), bucketId))
+            val session = testSubject.createSession(CreateSessionParams(1000000, timestampTomorrow.toEpochMilli(), bucketId))
             val storeRequest = testSubject.store(bucketId, piece)
 
             //thenSearchable
