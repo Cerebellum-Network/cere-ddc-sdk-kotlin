@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import network.cere.ddc.core.cid.CidBuilder
+import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.storage.config.FileStorageConfig
@@ -62,27 +63,68 @@ class FileStorage(
         caStorage.store(bucketId, Piece(name.toByteArray(), links = links))
     }
 
+    suspend fun uploadEncrypted(bucketId: Long, file: Path, encryptionOptions: EncryptionOptions): DdcUri = coroutineScope {
+        val channelBytes = Channel<ByteArray>(fileStorageConfig.parallel)
+        val indexedBytes = indexBytes(channelBytes)
+        val linksSet = ConcurrentSkipListSet<Pair<Long, Link>>(Comparator.comparingLong { it.first })
+        val name = file.name
+
+        //Connect bytes channel with file
+        launch { file.readToChannel(fileStorageConfig.chunkSizeInBytes, channelBytes) }
+
+        //Upload pieces and create link object
+        val jobs = (0 until fileStorageConfig.parallel).map {
+            launch {
+                indexedBytes.consumeEach {
+                    val pieceUri = caStorage.storeEncrypted(bucketId, Piece(data = it.second), encryptionOptions)
+                    linksSet.add(
+                        it.first to Link(
+                            cid = pieceUri.cid,
+                            size = it.second.size.toLong()
+                        )
+                    )
+                }
+            }
+        }
+
+        jobs.forEach { it.join() }
+        val links = linksSet.map { it.second }
+
+        caStorage.storeEncrypted(bucketId, Piece(name.toByteArray(), links = links), encryptionOptions)
+    }
+
     suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): ByteArray = coroutineScope {
-        readToChannel(bucketId, cid, session).toList()
+        readToChannel(bucketId, null, cid, session).toList()
+            .asSequence()
+            .sortedBy { it.position }
+            .fold(byteArrayOf()) { arr, value -> arr + value.data }
+    }
+
+    suspend fun readDecrypted(bucketId: Long, dek: ByteArray, cid: String, session: ByteArray? = null): ByteArray = coroutineScope {
+        readToChannel(bucketId, dek, cid, session).toList()
             .asSequence()
             .sortedBy { it.position }
             .fold(byteArrayOf()) { arr, value -> arr + value.data }
     }
 
     suspend fun download(bucketId: Long, cid: String, file: Path, session: ByteArray? = null): Unit = coroutineScope {
-        file.writeFromChannel(readToChannel(bucketId, cid, session))
+        file.writeFromChannel(readToChannel(bucketId, null, cid, session))
     }
 
-    private fun CoroutineScope.readToChannel(bucketId: Long, cid: String, session: ByteArray? = null): ReceiveChannel<ChunkData> {
+    suspend fun downloadDecrypted(bucketId: Long, dek: ByteArray, cid: String, file: Path, session: ByteArray? = null): Unit = coroutineScope {
+        file.writeFromChannel(readToChannel(bucketId, dek, cid, session))
+    }
+
+    private fun CoroutineScope.readToChannel(bucketId: Long, dek: ByteArray?, cid: String, session: ByteArray? = null): ReceiveChannel<ChunkData> {
         val channel = Channel<ChunkData>(fileStorageConfig.parallel)
         launch {
             val readTaskChannel = Channel<ReadTask>(UNLIMITED)
-            val headPiece = caStorage.read(bucketId, cid, session)
+            val headPiece = if (dek == null) caStorage.read(bucketId, cid, session) else caStorage.readDecrypted(bucketId, cid, dek)
 
             (0 until fileStorageConfig.parallel).map {
                 launch {
                     readTaskChannel.consumeEach { task ->
-                        val piece = caStorage.read(bucketId, task.link.cid, session)
+                        val piece = if (dek == null) caStorage.read(bucketId,  task.link.cid, session) else caStorage.readDecrypted(bucketId,  task.link.cid, dek)
 
                         if (piece.data.size.toLong() != task.link.size) {
                             throw RuntimeException("Invalid piece size")

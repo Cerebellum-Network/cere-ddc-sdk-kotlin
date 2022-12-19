@@ -3,6 +3,7 @@ package network.cere.ddc.storage
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
+import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.config.FileStorageConfig
 import network.cere.ddc.storage.domain.CreateSessionParams
@@ -42,7 +43,6 @@ internal class FileStorageIT {
         //given
         val fileBytes = Files.readAllBytes(path)
         val newFile = Paths.get("src", "test", "resources", "test1.txt")
-        //Files.createTempFile("file_storage_download_test", null).toAbsolutePath()
 
         //when
         val uri = testSubject.upload(2L, path)
@@ -87,6 +87,38 @@ internal class FileStorageIT {
             testSubject.download(bucketId, uri.cid, newFile, session)
             Files.readAllBytes(newFile) shouldBe fileBytes
         }
+    }
+
+    @Test
+    fun `Store and read encrupted`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val fileBytes = Files.readAllBytes(path)
+            val encryptionOptions = EncryptionOptions("/", "12343333333333333333333333333333".toByteArray())
+
+            //when
+            val uri = testSubject.uploadEncrypted(bucketId, path, encryptionOptions)
+            val data = testSubject.readDecrypted(bucketId, encryptionOptions.dek, uri.cid)
+            //then
+            data shouldBe fileBytes
+        }
+    }
+
+    @Test
+    fun `Store and download encrypted`(): Unit = runBlocking {
+        //given
+        val fileBytes = Files.readAllBytes(path)
+        val newFile = Paths.get("src", "test", "resources", "test1.txt")
+        val encryptionOptions = EncryptionOptions("/", "12343333333333333333333333333333".toByteArray())
+
+        //when
+        val uri = testSubject.uploadEncrypted(2L, path, encryptionOptions)
+        testSubject.downloadDecrypted(2L, encryptionOptions.dek, uri.cid, newFile)
+
+        //then
+        Files.readAllBytes(newFile) shouldBe fileBytes
+
     }
 
 
