@@ -1,17 +1,17 @@
 package network.cere.ddc.core.encryption
 
-import com.iwebpp.crypto.TweetNaclFast.SecretBox
+import org.apache.tuweni.crypto.sodium.SecretBox.Key
+import org.apache.tuweni.crypto.sodium.SecretBox.Nonce
+import org.apache.tuweni.crypto.sodium.SecretBox.decrypt
+import org.apache.tuweni.crypto.sodium.SecretBox.encrypt
 
 class NaclCipher : Cipher {
     override fun encrypt(data: ByteArray, dek: ByteArray): EncryptedData {
-        val nonce = (0..Long.MAX_VALUE).random()
-        val secretBox = SecretBox(dek, nonce)
-        return EncryptedData(secretBox.box(data), nonce.toString().encodeToByteArray())
+        val nonce = Nonce.random()
+        return EncryptedData(encrypt(data, Key.fromBytes(dek), nonce), nonce.bytesArray())
     }
 
     override fun decrypt(encryptedData: EncryptedData, dek: ByteArray): ByteArray {
-        val secretBox = SecretBox(dek, encryptedData.nonce.decodeToString().toLong())
-        secretBox.open(encryptedData.data)
-        return secretBox.open(encryptedData.data)
+        return decrypt(encryptedData.data, Key.fromBytes(dek), Nonce.fromBytes(encryptedData.nonce)) ?: throw RuntimeException("Can't decrypt data!")
     }
 }
