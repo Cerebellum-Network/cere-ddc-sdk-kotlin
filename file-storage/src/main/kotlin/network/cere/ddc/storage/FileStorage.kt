@@ -12,6 +12,7 @@ import network.cere.ddc.core.cid.CidBuilder
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.storage.config.FileStorageConfig
+import network.cere.ddc.storage.domain.CreateSessionParams
 import network.cere.ddc.storage.domain.Link
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.file.ChunkData
@@ -61,27 +62,27 @@ class FileStorage(
         caStorage.store(bucketId, Piece(name.toByteArray(), links = links))
     }
 
-    suspend fun read(bucketId: Long, cid: String): ByteArray = coroutineScope {
-        readToChannel(bucketId, cid).toList()
+    suspend fun read(bucketId: Long, cid: String, session: ByteArray? = null): ByteArray = coroutineScope {
+        readToChannel(bucketId, cid, session).toList()
             .asSequence()
             .sortedBy { it.position }
             .fold(byteArrayOf()) { arr, value -> arr + value.data }
     }
 
-    suspend fun download(bucketId: Long, cid: String, file: Path): Unit = coroutineScope {
-        file.writeFromChannel(readToChannel(bucketId, cid))
+    suspend fun download(bucketId: Long, cid: String, file: Path, session: ByteArray? = null): Unit = coroutineScope {
+        file.writeFromChannel(readToChannel(bucketId, cid, session))
     }
 
-    private fun CoroutineScope.readToChannel(bucketId: Long, cid: String): ReceiveChannel<ChunkData> {
+    private fun CoroutineScope.readToChannel(bucketId: Long, cid: String, session: ByteArray? = null): ReceiveChannel<ChunkData> {
         val channel = Channel<ChunkData>(fileStorageConfig.parallel)
         launch {
             val readTaskChannel = Channel<ReadTask>(UNLIMITED)
-            val headPiece = caStorage.read(bucketId, cid)
+            val headPiece = caStorage.read(bucketId, cid, session)
 
             (0 until fileStorageConfig.parallel).map {
                 launch {
                     readTaskChannel.consumeEach { task ->
-                        val piece = caStorage.read(bucketId, task.link.cid)
+                        val piece = caStorage.read(bucketId, task.link.cid, session)
 
                         if (piece.data.size.toLong() != task.link.size) {
                             throw RuntimeException("Invalid piece size")
@@ -121,4 +122,7 @@ class FileStorage(
         val position: Long,
         val link: Link
     )
+
+    suspend fun createSession(createSessionParams: CreateSessionParams): ByteArray = caStorage.createSession(createSessionParams)
+
 }
