@@ -3,7 +3,6 @@ dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on:${Versions.bouncyCastle}")
     implementation("com.github.yeeco:schnorrkel-java:${Versions.schnorrkel}")
     implementation("org.purejava:tweetnacl-java:${Versions.tweetnacl}")
-    implementation("org.apache.tuweni:tuweni-crypto:${Versions.tuweni}")
     implementation("net.java.dev.jna:jna:${Versions.jna}")
 
     implementation("com.github.komputing.khex:core:${Versions.khex}")

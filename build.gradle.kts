@@ -51,11 +51,11 @@ subprojects {
     val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 
     compileKotlin.kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_13.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
         javaParameters = true
     }
     compileTestKotlin.kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_13.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     tasks.withType<Test> {
