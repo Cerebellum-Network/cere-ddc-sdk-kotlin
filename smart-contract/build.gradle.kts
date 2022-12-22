@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":file-storage"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}")
 

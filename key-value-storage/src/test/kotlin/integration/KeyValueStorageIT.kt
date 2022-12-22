@@ -4,11 +4,11 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.storage.ContentAddressableStorage
-import network.cere.ddc.storage.KeyValueStorage
-import network.cere.ddc.storage.domain.CreateSessionParams
-import network.cere.ddc.storage.domain.Piece
-import network.cere.ddc.storage.domain.Tag
+import network.cere.ddc.`ca-storage`.ContentAddressableStorage
+import network.cere.ddc.`key-value-storage`.KeyValueStorage
+import network.cere.ddc.`ca-storage`.domain.CreateSessionParams
+import network.cere.ddc.`ca-storage`.domain.Piece
+import network.cere.ddc.`ca-storage`.domain.Tag
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
