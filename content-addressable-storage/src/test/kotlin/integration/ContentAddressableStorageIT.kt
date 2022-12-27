@@ -1,17 +1,21 @@
 package integration
 
-import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.encryption.EncryptionOptions
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.storage.ContentAddressableStorage
+import network.cere.ddc.storage.domain.CreateSessionParams
 import network.cere.ddc.storage.domain.Piece
 import network.cere.ddc.storage.domain.Query
+import network.cere.ddc.storage.domain.SearchType
 import network.cere.ddc.storage.domain.Tag
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit.DAYS
 
 internal class ContentAddressableStorageIT {
 
@@ -19,6 +23,7 @@ internal class ContentAddressableStorageIT {
     private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = ContentAddressableStorage(scheme, cdnNodeUrl)
+    private val timestampTomorrow = Instant.now().plus(1, DAYS)
 
     @Test
     fun `Store and read`() {
@@ -32,16 +37,16 @@ internal class ContentAddressableStorageIT {
 
             //when
             val pieceUrl = testSubject.store(bucketId, piece)
-            val savedPiece = testSubject.read(bucketId, pieceUrl.cid)
 
             //then
-            pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
+            val savedPiece = testSubject.read(bucketId, pieceUrl.cid)
+
             savedPiece shouldBeEqualToComparingFields piece
         }
     }
 
     @Test
-    fun `Encrypted store and read`() {
+    fun `Store and read with session`() {
         runBlocking {
             //given
             val bucketId = 1L
@@ -49,16 +54,16 @@ internal class ContentAddressableStorageIT {
                 data = "Hello world!".toByteArray(),
                 tags = listOf(Tag(key = "Creator", value = "Jack"))
             )
-            val encryptionOptions = EncryptionOptions("/some/path", "11111111111111111111111111111111".toByteArray())
 
             //when
-            val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
-            val savedPiece = testSubject.readDecrypted(bucketId, pieceUrl.cid, encryptionOptions.dek)
+            val session = testSubject.createSession(CreateSessionParams(1000000, timestampTomorrow.toEpochMilli(), bucketId))
+            val storeRequest = testSubject.store(bucketId, piece)
 
-            //then
-            pieceUrl.toString() shouldBe "cns://$bucketId/${pieceUrl.cid}"
-            savedPiece.data contentEquals  piece.data
-            savedPiece.tags shouldContainAll listOf(Tag(key = "Creator", value = "Jack"), Tag(key = "dekPath", value = "/some/path"))
+            //thenSearchable
+            storeRequest.cid shouldNotBe null
+
+            val readRequest = testSubject.read(bucketId, storeRequest.cid, session)
+            readRequest.data shouldBe piece.data
         }
     }
 
@@ -93,6 +98,42 @@ internal class ContentAddressableStorageIT {
 
             //then
             result.pieces shouldContainExactly listOf(piece.copy(data = byteArrayOf(), cid = pieceUrl.cid))
+        }
+    }
+
+    @Test
+    fun `Search not searchable`() {
+        runBlocking {
+            //given
+            val bucketId = 2L
+            val tags = listOf(Tag(key = "Search2", value = "test2", SearchType.NOT_SEARCHABLE))
+
+            //when
+            val result = testSubject.search(Query(bucketId, tags))
+
+            //then
+            result.pieces.isEmpty() shouldBe true
+        }
+    }
+
+    @Test
+    fun `Store and read encrypted`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val piece = Piece(
+                data = "Hello world!".toByteArray(),
+                tags = listOf(Tag(key = "Creator", value = "Jack"))
+            )
+            val encryptionOptions = EncryptionOptions("/", "12343333333333333333333333333333".toByteArray())
+
+            //when
+            val pieceUrl = testSubject.storeEncrypted(bucketId, piece, encryptionOptions)
+
+            //then
+            val savedPiece = testSubject.readDecrypted(bucketId, pieceUrl.cid, encryptionOptions.dek)
+
+            savedPiece.data shouldBe piece.data
         }
     }
 }

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package pb;
+
+import "tag.proto";
+
+option go_package = "/pb";
+
+/*
+ * A query represents a search of pieces by tags.
+ */
+message Query {
+  // The ID of the bucket to search.
+  uint32       bucketId = 1;
+  // A list of tags to match against the tags of stored pieces.
+  // There can be multiple tags with the same key.
+  repeated Tag tags     = 2;
+  // Skip piece data in search result.
+  bool         skipData = 3;
+}

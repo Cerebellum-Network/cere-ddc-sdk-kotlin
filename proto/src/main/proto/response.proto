@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+/*
+  Response codes
+ */
+enum Code {
+  SUCCESS = 0;
+  CREATED = 1;
+  NOT_FOUND = 2;
+  FAILED_READ_BODY = 3;
+  FAILED_UNMARSHAL_BODY = 4;
+  FAILED_MARSHAL_BODY = 5;
+  FAILED_GET_BUCKET = 6;
+  BUCKET_RENT_EXPIRED = 7;
+  INVALID_PUBLIC_KEY = 8;
+  INVALID_SIGNATURE = 9;
+  INVALID_PARAMETER = 10;
+  BUCKET_NO_ACCESS = 11;
+  INTERNAL_ERROR = 12;
+  BAD_GATEWAY = 13;
+  INVALID_SESSION_ID = 14;
+}
+
+
+/*
+  Response structure for API v1
+ */
+message Response {
+  // Response body
+  bytes body = 1;
+  // Response code
+  Code responseCode = 2;
+  // Used gas for executing request
+  uint32 gas = 3;
+  // CDN public key
+  bytes publicKey = 4;
+  // CDN signature sign(CID(varint body + body + varint response code + varint resources))
+  bytes signature = 5;
+  // The name of the signature scheme (sr25519, ed25519).
+  // Default and recommended value: "" or "sr25519".
+  string scheme = 6;
+  // The ID of the hashing algorithm as per multiformats/multihash.
+  // Default and recommended value: 0 or 0xb220, meaning blake2b-256.
+  uint64 multiHashType = 7;
+}
