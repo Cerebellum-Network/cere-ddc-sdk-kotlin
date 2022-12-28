@@ -30,6 +30,8 @@ import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.`file-storage`.FileStorage
 import network.cere.ddc.`key-value-storage`.KeyValueStorage
 import org.bouncycastle.jcajce.provider.digest.Blake2b
+import kotlin.text.toByteArray
+import org.komputing.khex.extensions.toHexString
 
 class DdcClientImpl(
     private val caStorage: ContentAddressableStorage,
@@ -52,7 +54,9 @@ class DdcClientImpl(
             val scheme = Scheme.create(options.schemeType, privateKey)
             val config = BlockchainConfig(options.smartContract.rpcUrl, options.smartContract.contractAddress, encryptionSecretPhrase)
             val bucketContractConfig = BucketContractConfig(options.smartContract.abi.toPath())
-            val smartContract = BucketSmartContract.buildAndConnect(config, bucketContractConfig)
+            //TODO unmock when smartcontract will be ready
+            //val smartContract = BucketSmartContract.buildAndConnect(config, bucketContractConfig)
+            val smartContract = BucketSmartContract.mock(config, bucketContractConfig)
             val caStorage = ContentAddressableStorage(scheme, options.cdnUrl)
 
             return DdcClientImpl(caStorage, smartContract, options, encryptionSecretPhrase)
@@ -128,7 +132,7 @@ class DdcClientImpl(
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
         val edek = box.box(dek)
         //ToDo need better structure to store keys
-        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.decodeToString()}"))
+        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.toHexString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.toHexString()}"))
         val p = Piece(edek, tags)
         caStorage.store(bucketId, p)
 
@@ -156,8 +160,8 @@ class DdcClientImpl(
         }
         val piece = pieces[0]
 
-        val encryptor = piece.tags.find { it.key === ENCRYPTOR_TAG }?.value ?: throw Exception("EDEK doesn't contains encryptor public key")
-        val box = Box(encryptor.encodeToByteArray(), boxKeypair.secretKey)
+        val encryptor = piece.tags.find { it.key == ENCRYPTOR_TAG }?.value ?: throw Exception("EDEK doesn't contains encryptor public key")
+        val box = Box(encryptor.hexToBytes(), boxKeypair.secretKey)
         val result = box.open(piece.data) ?: throw Exception("Unable to decrypt dek")
         return result
     }
@@ -237,7 +241,7 @@ class DdcClientImpl(
         val dek = buildHierarchicalDekHex(masterDek, dekPath)
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
         val partnerEdek = box.box(dek)
-        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.decodeToString()), Tag("Key", "${bucketId}/${dekPath}/${publicKeyHex}"))
+        val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.toHexString()), Tag("Key", "${bucketId}/${dekPath}/${publicKeyHex}"))
         val pieceUri = caStorage.store(bucketId, Piece(partnerEdek, tags))
         return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
     }

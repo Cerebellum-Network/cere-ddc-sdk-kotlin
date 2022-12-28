@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation(project(":core"))
     implementation(project(":file-storage"))
+    implementation(project(":content-addressable-storage"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}")
 
@@ -40,4 +41,6 @@ dependencies {
     implementation("com.github.komputing.khex:extensions:${Versions.khex}")
     implementation("com.github.yeeco:schnorrkel-java:${Versions.schnorrkel}")
     implementation("net.openhft:zero-allocation-hashing:${Versions.openhft}")
+    // CID
+    implementation("com.github.ipld:java-cid:${Versions.cid}")
 }

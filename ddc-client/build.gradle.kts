@@ -29,6 +29,7 @@ dependencies {
 
     implementation("org.purejava:tweetnacl-java:${Versions.tweetnacl}")
     implementation("org.bouncycastle:bcprov-jdk15on:${Versions.bouncyCastle}")
+    implementation("com.github.komputing.khex:extensions:${Versions.khex}")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
