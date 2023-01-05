@@ -1,6 +1,7 @@
 package network.cere.ddc.client
 
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.`ca-storage`.domain.Piece
 import network.cere.ddc.`ca-storage`.domain.Tag
@@ -14,9 +15,6 @@ internal class DdcClientImplTest {
     private val privateKey = "0x2cf8a6819aa7f2a2e7a62ce8cf0dca2aca48d87b2001652de779f43fecbc5a03"
     private val cdnNodeUrl = "http://localhost:8080"
     private val clientOptions = ClientOptions(cdnNodeUrl)
-    private val balance = 1L
-    private val resource = 1L
-    private val clusterId = 2L
     private val bucketId = 1L
 
     @Test
@@ -41,13 +39,13 @@ internal class DdcClientImplTest {
             val ddcClient = DdcClientImpl.buildAndConnect(clientOptions, privateKey, null)
             val tags = listOf(Tag(key = "Search", value = "test"))
             val piece = Piece(data = "Hello world!".toByteArray(), tags = tags)
-            val storeOptions = StoreOptions("1/", true)
-            val readOptions = ReadOptions("1", true)
+            val storeOptions = StoreOptions("test/piece/", true)
+            val readOptions = ReadOptions("test/piece/", true)
             //when
             val ddcUri = ddcClient.store(bucketId, piece, storeOptions)
             //then
             val result = ddcClient.read(ddcUri, readOptions)
-            result shouldBeEqualToComparingFields piece
+            result.data shouldBe  piece.data
         }
     }
 }

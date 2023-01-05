@@ -28,7 +28,6 @@ import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.core.uri.Protocol
-import org.komputing.khex.extensions.toHexString
 import pb.PieceOuterClass
 import pb.QueryOuterClass
 import pb.RequestOuterClass
@@ -174,13 +173,13 @@ class ContentAddressableStorage(
 
     suspend fun storeEncrypted(bucketId: Long, piece: Piece, encryptionOptions: EncryptionOptions): DdcUri {
         val encryptedData = cipher.encrypt(piece.data, encryptionOptions.dek)
-        val newTags = mutableListOf(Tag(DEK_PATH_TAG, encryptionOptions.dekPath), Tag(NONCE_TAG, encryptedData.nonce.toHexString())) + piece.tags
+        val newTags = mutableListOf(Tag(DEK_PATH_TAG, encryptionOptions.dekPath), Tag(NONCE_TAG, encryptedData.nonce.decodeToString())) + piece.tags
         return this.store(bucketId, piece.copy(data = encryptedData.data, tags = newTags))
     }
 
     suspend fun readDecrypted(bucketId: Long, cid: String, dek: ByteArray): Piece {
         val piece = read(bucketId, cid)
-        val nonce = piece.tags.first { it.key == NONCE_TAG }.value.hexToBytes()
+        val nonce = piece.tags.first { it.key == NONCE_TAG }.value.encodeToByteArray()
         val decryptedData = cipher.decrypt(EncryptedData(piece.data, nonce), dek)
         return piece.copy(data = decryptedData)
     }

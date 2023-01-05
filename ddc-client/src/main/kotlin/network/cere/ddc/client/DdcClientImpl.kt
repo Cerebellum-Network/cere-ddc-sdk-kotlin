@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.iwebpp.crypto.TweetNacl.Box
 import network.cere.ddc.`ca-storage`.ContentAddressableStorage
 import network.cere.ddc.`ca-storage`.ContentAddressableStorage.Companion.DEK_PATH_TAG
+import network.cere.ddc.`ca-storage`.ContentAddressableStorage.Companion.NONCE_TAG
 import network.cere.ddc.`ca-storage`.domain.Container
 import network.cere.ddc.`ca-storage`.domain.Piece
 import network.cere.ddc.`ca-storage`.domain.PieceUri
@@ -30,8 +31,8 @@ import network.cere.ddc.core.uri.Protocol
 import network.cere.ddc.`file-storage`.FileStorage
 import network.cere.ddc.`key-value-storage`.KeyValueStorage
 import org.bouncycastle.jcajce.provider.digest.Blake2b
-import kotlin.text.toByteArray
 import org.komputing.khex.extensions.toHexString
+import java.util.*
 
 class DdcClientImpl(
     private val caStorage: ContentAddressableStorage,
@@ -42,13 +43,13 @@ class DdcClientImpl(
 
     val kvStorage: KeyValueStorage = KeyValueStorage(caStorage)
     val fileStorage: FileStorage = FileStorage(caStorage, options.fileOptions)
-    private val masterDek: ByteArray = Blake2b.Blake2b256().digest(encryptionSecretPhrase.toByteArray())//TODO is .toByteArray() ok?
-    private val boxKeypair: Box.KeyPair = Box.keyPair_fromSecretKey(encryptionSecretPhrase.toByteArray())//TODO is .toByteArray() ok?
+    private val masterDek: ByteArray = Blake2b.Blake2b256().digest(encryptionSecretPhrase.toByteArray())
+    private val boxKeypair: Box.KeyPair = Box.keyPair_fromSecretKey(encryptionSecretPhrase.toByteArray())
 
     companion object {
         const val ENCRYPTOR_TAG = "encryptor"
         const val MAX_BUCKET_SIZE = 5
-        suspend fun buildAndConnect(options: ClientOptions, privateKey: String, encryptionSecretPhrase: String?): DdcClient {
+        fun buildAndConnect(options: ClientOptions, privateKey: String, encryptionSecretPhrase: String?): DdcClient {
             val encryptionSecretPhrase = encryptionSecretPhrase ?: privateKey
 
             val scheme = Scheme.create(options.schemeType, privateKey)
@@ -128,10 +129,8 @@ class DdcClientImpl(
 
     private suspend fun storeEncrypted(bucketId: Long, fileOrPiece: Container, options: StoreOptions): DdcUri {
         val dek = buildHierarchicalDekHex(masterDek, options.dekPath)
-        //ToDo can be random (Nacl ScaleBox). We need to decide if we need store publickey of user who created edek or shared
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
         val edek = box.box(dek)
-        //ToDo need better structure to store keys
         val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.toHexString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.toHexString()}"))
         val p = Piece(edek, tags)
         caStorage.store(bucketId, p)
@@ -154,7 +153,7 @@ class DdcClientImpl(
     }
 
     private suspend fun downloadDek(bucketId: Long, dekPath: String): ByteArray {
-        val pieces = kvStorage.read(bucketId, "${bucketId}/${dekPath}/${boxKeypair.publicKey.decodeToString()}")
+        val pieces = kvStorage.read(bucketId, "${bucketId}/${dekPath}/${boxKeypair.publicKey.toHexString()}")
         if (pieces.isEmpty()) {
             throw Exception("Client EDEK not found")
         }
@@ -167,7 +166,7 @@ class DdcClientImpl(
     }
 
     private fun buildHierarchicalDekHex(dek: ByteArray, dekPath: String?): ByteArray {
-        if (dekPath == null) {
+        if (dekPath.isNullOrEmpty()) {
             return dek
         }
 
@@ -175,6 +174,10 @@ class DdcClientImpl(
         var increasingDek = dek
         for (part in pathParts) {
             val data = increasingDek + part.encodeToByteArray()
+            println(">>>>>>>>>>>>increasingDek " + Arrays.toString(increasingDek))
+            println(">>>>>>>>>>>>part " + part)
+            println(">>>>>>>>>>>>part.encodeToByteArray() " + Arrays.toString(part.encodeToByteArray()))
+            println(">>>>>>>>>>>>data " + Arrays.toString(data))
             increasingDek = Blake2b.Blake2b256().digest(data)
         }
 
@@ -186,7 +189,7 @@ class DdcClientImpl(
             val dekPath = piece.tags.find { it.key == DEK_PATH_TAG }?.value
             if (dekPath == null) {
                 throw Exception("Piece=${ddcUri} doesn't have dekPath")
-            } else if (!dekPath.startsWith(options.dekPath!! + "/") && dekPath !== options.dekPath) {
+            } else if (!dekPath.startsWith(options.dekPath!!) && dekPath !== options.dekPath) {
                 throw Exception("Provided dekPath='${options.dekPath}' doesn't correct for piece with dekPath='${dekPath}'")
             }
 
@@ -200,9 +203,8 @@ class DdcClientImpl(
 
     private suspend fun readByPieceUri(ddcUri: DdcUri, headPiece: Piece, options: ReadOptions?): Piece {
         val isEncrypted = headPiece.tags.any { it.key == DEK_PATH_TAG }
-        val nonce = headPiece.tags.first { it.key == ContentAddressableStorage.NONCE_TAG }.value
+        val nonce = headPiece.tags.first { it.key == NONCE_TAG }.value
 
-        //TODO 4. put into DEK cache
         val dek = findDek(ddcUri, headPiece, options)
 
         if (headPiece.links.isNotEmpty()) {
@@ -223,7 +225,7 @@ class DdcClientImpl(
             val piece = caStorage.read(pieceUri.bucketId, pieceUri.cid)
             if (options != null && options.decrypt) {
                 val dek = findDek(ddcUri, piece, options)
-                val nonce = "00000000000000000000000000000000".toByteArray()
+                val nonce = piece.tags.find { it.key == NONCE_TAG }!!.value.encodeToByteArray()
                 piece.data = caStorage.cipher.decrypt(EncryptedData(piece.data, nonce), dek)
             }
             return piece
