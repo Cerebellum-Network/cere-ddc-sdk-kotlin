@@ -20,7 +20,7 @@ message LogRecord {
     // search request metadata
     QueryRequest queryRequest = 3;
   }
-  // timestamp of request in UNIX milliseconds.
+  // timestamp of request in UNIX nanoseconds.
   uint64 timestamp = 4;
   // ip address of user who sent request
   string address = 5;

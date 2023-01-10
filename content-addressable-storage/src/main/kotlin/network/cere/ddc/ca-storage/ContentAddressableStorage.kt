@@ -28,6 +28,7 @@ import network.cere.ddc.core.extension.retry
 import network.cere.ddc.core.signature.Scheme
 import network.cere.ddc.core.uri.DdcUri
 import network.cere.ddc.core.uri.Protocol
+import pb.AckOuterClass
 import pb.PieceOuterClass
 import pb.QueryOuterClass
 import pb.RequestOuterClass
@@ -41,6 +42,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InvalidObjectException
 import java.net.URL
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -53,16 +55,23 @@ class ContentAddressableStorage(
     private val cdnNodeUrl: String,
     private val clientConfig: ClientConfig = ClientConfig(),
     private val cidBuilder: CidBuilder = CidBuilder(),
-    val cipher: Cipher = NaclCipher()
+    val cipher: Cipher = NaclCipher(),
+    private val readAttempts: Int = 1,
+    private val ackTimeout: Int = 500
 ) {
     companion object {
         const val BASE_PATH_PIECES = "/api/v1/rest/pieces"
         const val BASE_PATH_SESSION = "/api/v1/rest/session"
+        const val BASE_PATH_ACK = "/api/rest/ack"
         const val DEK_PATH_TAG = "dekPath"
         const val NONCE_TAG = "Nonce"
         const val READ_PARSE_ERROR_MESSAGE = "Couldn't parse read response body to SignedPiece."
         const val SEARCH_PARSE_ERROR_MESSAGE = "Couldn't parse search response body to SearchResult."
     }
+
+    val gasCounter: GasCounter = GasCounter()
+
+    val taskRunner: TasksRunner = TasksRunner(ackTimeout)
 
     private val client: HttpClient = HttpClient().config {
         install(HttpTimeout) {
@@ -221,6 +230,11 @@ class ContentAddressableStorage(
             val pbSignedPiece = runCatching { SignedPieceOuterClass.SignedPiece.parseFrom(pbResponse.body) }
                 .getOrElse { throw InvalidObjectException(READ_PARSE_ERROR_MESSAGE) }
 
+            if (pbResponse.responseCode == ResponseOuterClass.Code.SUCCESS && session != null) {
+                this.gasCounter.push(pbResponse.gas.toLong())
+                this.taskRunner.addTask(ack, session)
+            }
+
             return parsePiece(PieceOuterClass.Piece.parseFrom(pbSignedPiece.piece))
         }
     }
@@ -353,5 +367,56 @@ class ContentAddressableStorage(
         }
 
         return sessionId
+    }
+
+    private val ack: suspend (Array<ByteArray>) -> Unit = { session ->
+        val nonce = (0..Long.MAX_VALUE).random()
+        val gasAndGasCommit = gasCounter.readUncommitted()
+        val ack = AckOuterClass.Ack.newBuilder()
+            .setTimestamp(Instant.now().toEpochMilli())
+            .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .setGas(gasAndGasCommit.first)
+            .setNonce(ByteString.copyFrom(nonce.toString().encodeToByteArray()))
+            .build()
+
+
+        val builder = RequestOuterClass.Request.newBuilder()
+            .setBody(ByteString.copyFrom(ack.toByteArray()))
+            .setPublicKey(ByteString.copyFrom(scheme.publicKeyHex.hexToBytes()))
+            .setScheme(scheme.name)
+            .setMultiHashType(0)
+        var request = builder.build()
+        val ackSignature = if (session.isNotEmpty()) {
+            null
+        } else {
+            signRequest(request, BASE_PATH_ACK, HttpMethod.Post)
+        }
+
+        if (!ackSignature.isNullOrEmpty()) {
+            builder.setSignature(ByteString.copyFrom(ackSignature.encodeToByteArray()))
+        }
+        if (session.isNotEmpty()) {
+            builder.sessionId = ByteString.copyFrom(session.get(0))
+        }
+        request = builder.build()
+
+
+        retry(
+            clientConfig.retryTimes,
+            clientConfig.retryBackOff,
+            { it is IOException && it !is InvalidObjectException }) {
+
+            val response = sendRequest(BASE_PATH_ACK) {
+                method = HttpMethod.Post
+                body = request.toByteArray()
+            }
+            gasCounter.commit(gasAndGasCommit.second)
+            if (!response.status.isSuccess()) {
+                gasCounter.commit(gasAndGasCommit.second)
+                throw RuntimeException(
+                    "Failed to get acknowledgment. Response: status='${response.status}' body=${response.receive<String>()}"
+                )
+            }
+        }
     }
 }
