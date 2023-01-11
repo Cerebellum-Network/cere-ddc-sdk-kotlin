@@ -1,7 +1,8 @@
 package network.cere.ddc.`ca-storage`
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -30,10 +31,10 @@ class TasksRunner(private val timeout: Int) {
     }
 
     private suspend fun runTask(task: suspend (Array<ByteArray>) -> Unit) {
-        coroutineScope {
+        CoroutineScope(SupervisorJob()).launch {
             job = launch {
-                val args: Array<ByteArray> = queue[task] ?: arrayOf()
                 delay(timeout.toLong())
+                val args: Array<ByteArray> = queue[task] ?: arrayOf()
                 try {
                     task(args)
                     queue.remove(task)

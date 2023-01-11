@@ -13,7 +13,8 @@ data class ClientOptions(
     val smartContract: SmartContractOptions = SmartContractOptions.TESTNET,
     val schemeType: String = SR_25519,
     val cipher: Cipher = NaclCipher(),
-    val cidBuilder: CidBuilder = CidBuilder()
+    val cidBuilder: CidBuilder = CidBuilder(),
+    val ackTimeout: Int = 500
 ) {
     constructor(clusterId: Long) : this(clusterId, "")
     constructor(cdnUrl: String) : this(null, cdnUrl)

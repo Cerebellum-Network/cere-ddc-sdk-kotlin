@@ -15,10 +15,10 @@ class GasCounter {
         this.commitId += 1
         val commit = HashSet<LongArray>()
         val gasAmount = engine.map {
-            engine.remove(it)
             commit.add(it)
-            it.get(0)
+            it[0]
         }.reduce { a, b -> a + b }
+        engine.clear()
         commits[commitId] = commit
         return Pair(gasAmount, commitId)
     }
