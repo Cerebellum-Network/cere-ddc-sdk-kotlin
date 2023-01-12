@@ -26,6 +26,13 @@ class BucketSmartContract(
             return BucketSmartContract(config, bucketContractConfig)
                 .also { if (!it.connect()) throw ConnectException("Could not connect to blockchain: '${config.wsUrl}'") }
         }
+
+        fun mock(
+            config: BlockchainConfig,
+            bucketContractConfig: BucketContractConfig
+        ): BucketSmartContract {
+            return BucketSmartContract(config, bucketContractConfig)
+        }
     }
 
     constructor(
