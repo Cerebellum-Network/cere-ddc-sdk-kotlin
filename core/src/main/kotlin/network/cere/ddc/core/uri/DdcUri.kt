@@ -6,7 +6,8 @@ data class DdcUri(
     val path: String?,
     val protocol: Protocol?,
     val organization: String?,
-    val options: String?
+    val options: String?,
+    val nonce: ByteArray? = null
 ) {
     companion object {
         const val DDC = "ddc"
@@ -26,35 +27,35 @@ data class DdcUri(
 
         if (bucketId != null) {
             parts.add(BUC)
-            parts.add(""+bucketId)
+            parts.add("" + bucketId)
         }
 
         if (path != null) {
-            if (protocol == null ) {
-                throw Exception("Unable to build DDC uri string without protocol");
+            if (protocol == null) {
+                throw Exception("Unable to build DDC uri string without protocol")
             }
             parts.add(protocol.name)
             parts.add(path)
         }
 
         var result = ""
-        parts.forEach{result = "$result/$it" }
+        parts.forEach { result = "$result/$it" }
         if (options != null) {
             result = "$result?$options"
         }
 
-        return result;
+        return result
     }
 
     data class Builder(
 
-        var bucketId: Long?  = null,
-        var cid: String?  = null,
-        var path: String?  = null,
-        var protocol: Protocol?  = null,
-        var organization: String?  = null,
-        var options: String?  = null,
-        ) {
+        var bucketId: Long? = null,
+        var cid: String? = null,
+        var path: String? = null,
+        var protocol: Protocol? = null,
+        var organization: String? = null,
+        var options: String? = null,
+    ) {
 
         fun bucketId(bucketId: Long) = apply { this.bucketId = bucketId }
         fun cid(cid: String) = apply { this.cid = cid }

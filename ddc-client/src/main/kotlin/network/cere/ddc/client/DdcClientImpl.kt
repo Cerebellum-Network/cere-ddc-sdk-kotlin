@@ -5,7 +5,7 @@ import com.iwebpp.crypto.TweetNacl.Box
 import network.cere.ddc.`ca-storage`.ContentAddressableStorage
 import network.cere.ddc.`ca-storage`.ContentAddressableStorage.Companion.DEK_PATH_TAG
 import network.cere.ddc.`ca-storage`.ContentAddressableStorage.Companion.NONCE_TAG
-import network.cere.ddc.`ca-storage`.domain.Container
+import network.cere.ddc.`ca-storage`.domain.File
 import network.cere.ddc.`ca-storage`.domain.Piece
 import network.cere.ddc.`ca-storage`.domain.PieceUri
 import network.cere.ddc.`ca-storage`.domain.Query
@@ -32,7 +32,6 @@ import network.cere.ddc.`file-storage`.FileStorage
 import network.cere.ddc.`key-value-storage`.KeyValueStorage
 import org.bouncycastle.jcajce.provider.digest.Blake2b
 import org.komputing.khex.extensions.toHexString
-import java.util.*
 
 class DdcClientImpl(
     private val caStorage: ContentAddressableStorage,
@@ -123,33 +122,46 @@ class DdcClientImpl(
         }
     }
 
+    override suspend fun upload(bucketId: Long, file: File, options: StoreOptions?): DdcUri {
+        val filePath = file.filePath
+        return if (options != null && options.encrypt) {
+            uploadEncrypted(bucketId, file, options)
+        } else if (filePath != null) {
+            fileStorage.upload(bucketId, filePath)
+        } else {
+            throw Exception("There is no file data")
+        }
+    }
+
     private suspend fun storeUnencrypted(bucketId: Long, piece: Piece): DdcUri {
         return caStorage.store(bucketId, piece)
     }
 
-    private suspend fun storeEncrypted(bucketId: Long, fileOrPiece: Container, options: StoreOptions): DdcUri {
+    private suspend fun uploadEncrypted(bucketId: Long, file: File, options: StoreOptions): DdcUri {
+        val encryptionOptions = constructEncryptionOptions(options, bucketId)
+        val filePath = file.filePath
+        val pieceUri = if (filePath != null) {
+            fileStorage.uploadEncrypted(bucketId, filePath, encryptionOptions)
+        } else {
+            throw Exception("There is no file data")
+        }
+        return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
+    }
+
+    private suspend fun constructEncryptionOptions(options: StoreOptions, bucketId: Long): EncryptionOptions {
         val dek = buildHierarchicalDekHex(masterDek, options.dekPath)
         val box = Box(boxKeypair.publicKey, boxKeypair.secretKey)
         val edek = box.box(dek)
         val tags = mutableListOf(Tag(ENCRYPTOR_TAG, boxKeypair.publicKey.toHexString()), Tag("Key", "${bucketId}/${options.dekPath}/${boxKeypair.publicKey.toHexString()}"))
         val p = Piece(edek, tags)
         caStorage.store(bucketId, p)
+        return EncryptionOptions(options.dekPath ?: "", dek)
+    }
 
-        val encryptionOptions = EncryptionOptions(options.dekPath ?: "", dek)
-
-        if (fileOrPiece is Piece) {
-            val pieceUri = caStorage.storeEncrypted(bucketId, fileOrPiece, encryptionOptions)
-            return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
-        } else {
-//            val pieceUri = fileStorage.uploadEncrypted(
-//                bucketId,
-//                fileOrPiece.data,
-//                fileOrPiece.tags,
-//                encryptionOptions,
-//            )
-            val pieceUri = PieceUri(0, "")
-            return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IFILE).build()
-        }
+    private suspend fun storeEncrypted(bucketId: Long, piece: Piece, options: StoreOptions): DdcUri {
+        val encryptionOptions = constructEncryptionOptions(options, bucketId)
+        val pieceUri = caStorage.storeEncrypted(bucketId, piece, encryptionOptions)
+        return DdcUri.Builder().bucketId(pieceUri.bucketId).cid(pieceUri.cid).protocol(Protocol.IPIECE).build()
     }
 
     private suspend fun downloadDek(bucketId: Long, dekPath: String): ByteArray {
@@ -161,8 +173,7 @@ class DdcClientImpl(
 
         val encryptor = piece.tags.find { it.key == ENCRYPTOR_TAG }?.value ?: throw Exception("EDEK doesn't contains encryptor public key")
         val box = Box(encryptor.hexToBytes(), boxKeypair.secretKey)
-        val result = box.open(piece.data) ?: throw Exception("Unable to decrypt dek")
-        return result
+        return box.open(piece.data) ?: throw Exception("Unable to decrypt dek")
     }
 
     private fun buildHierarchicalDekHex(dek: ByteArray, dekPath: String?): ByteArray {
@@ -174,19 +185,14 @@ class DdcClientImpl(
         var increasingDek = dek
         for (part in pathParts) {
             val data = increasingDek + part.encodeToByteArray()
-            println(">>>>>>>>>>>>increasingDek " + Arrays.toString(increasingDek))
-            println(">>>>>>>>>>>>part " + part)
-            println(">>>>>>>>>>>>part.encodeToByteArray() " + Arrays.toString(part.encodeToByteArray()))
-            println(">>>>>>>>>>>>data " + Arrays.toString(data))
             increasingDek = Blake2b.Blake2b256().digest(data)
         }
 
         return increasingDek
     }
 
-    private suspend fun findDek(ddcUri: DdcUri, piece: Piece, options: ReadOptions?): ByteArray {
+    private suspend fun findDek(ddcUri: DdcUri, dekPath: String?, options: ReadOptions?): ByteArray {
         if (options != null && options.decrypt) {
-            val dekPath = piece.tags.find { it.key == DEK_PATH_TAG }?.value
             if (dekPath == null) {
                 throw Exception("Piece=${ddcUri} doesn't have dekPath")
             } else if (!dekPath.startsWith(options.dekPath!!) && dekPath !== options.dekPath) {
@@ -205,7 +211,8 @@ class DdcClientImpl(
         val isEncrypted = headPiece.tags.any { it.key == DEK_PATH_TAG }
         val nonce = headPiece.tags.first { it.key == NONCE_TAG }.value
 
-        val dek = findDek(ddcUri, headPiece, options)
+        val dekPath = headPiece.tags.find { it.key == DEK_PATH_TAG }?.value
+        val dek = findDek(ddcUri, dekPath, options)
 
         if (headPiece.links.isNotEmpty()) {
             TODO("Not yet implemented")
@@ -219,12 +226,13 @@ class DdcClientImpl(
         }
     }
 
-    override suspend fun read(ddcUri: DdcUri, options: ReadOptions?): Container {
+    override suspend fun read(ddcUri: DdcUri, options: ReadOptions?): Piece {
         if (ddcUri.protocol != null) {
             val pieceUri = PieceUri(ddcUri.bucketId, ddcUri.cid)
             val piece = caStorage.read(pieceUri.bucketId, pieceUri.cid)
             if (options != null && options.decrypt) {
-                val dek = findDek(ddcUri, piece, options)
+                val dekPath = piece.tags.find { it.key == DEK_PATH_TAG }?.value
+                val dek = findDek(ddcUri, dekPath, options)
                 val nonce = piece.tags.find { it.key == NONCE_TAG }!!.value.encodeToByteArray()
                 piece.data = caStorage.cipher.decrypt(EncryptedData(piece.data, nonce), dek)
             }
@@ -232,6 +240,19 @@ class DdcClientImpl(
         }
         val headPiece = caStorage.read(ddcUri.bucketId, ddcUri.cid)
         return readByPieceUri(ddcUri, headPiece, options)
+    }
+
+    override suspend fun readFile(ddcUri: DdcUri, options: ReadOptions?): File {
+        if (ddcUri.protocol != null) {
+            var data = fileStorage.read(ddcUri.bucketId, ddcUri.cid)
+            val nonce = ddcUri.nonce
+            if (options != null && options.decrypt && nonce != null) {
+                val dek = findDek(ddcUri, options.dekPath, options)
+                data = caStorage.cipher.decrypt(EncryptedData(data, nonce), dek)
+            }
+            return File(data)
+        }
+        return File(fileStorage.read(ddcUri.bucketId, ddcUri.cid))
     }
 
     override suspend fun search(query: Query): List<Piece> {
