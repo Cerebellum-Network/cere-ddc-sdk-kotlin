@@ -1,5 +1,7 @@
 package network.cere.ddc.core.uri
 
+import network.cere.ddc.core.exception.DdcException
+
 data class DdcUri(
     val bucketId: Long,
     val cid: String,
@@ -32,7 +34,7 @@ data class DdcUri(
 
         if (path != null) {
             if (protocol == null) {
-                throw Exception("Unable to build DDC uri string without protocol")
+                throw DdcException("Unable to build DDC uri string without protocol")
             }
             parts.add(protocol.name)
             parts.add(path)
