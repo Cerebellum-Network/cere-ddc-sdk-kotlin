@@ -4,10 +4,14 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import kotlinx.coroutines.runBlocking
 import network.cere.ddc.core.signature.Scheme
-import network.cere.ddc.storage.KeyValueStorage
-import network.cere.ddc.storage.domain.Piece
-import network.cere.ddc.storage.domain.Tag
+import network.cere.ddc.`ca-storage`.ContentAddressableStorage
+import network.cere.ddc.`key-value-storage`.KeyValueStorage
+import network.cere.ddc.`ca-storage`.domain.CreateSessionParams
+import network.cere.ddc.`ca-storage`.domain.Piece
+import network.cere.ddc.`ca-storage`.domain.Tag
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class KeyValueStorageIT {
 
@@ -15,6 +19,8 @@ internal class KeyValueStorageIT {
     private val cdnNodeUrl = "http://localhost:8080"
     private val scheme = Scheme.create(Scheme.SR_25519, privateKey)
     private val testSubject = KeyValueStorage(scheme, cdnNodeUrl)
+    private val caStorage = ContentAddressableStorage(scheme, cdnNodeUrl)
+    private val timestampTomorrow = Instant.now().plus(1, ChronoUnit.DAYS)
 
     @Test
     fun `Store and read`() {
@@ -33,7 +39,29 @@ internal class KeyValueStorageIT {
 
             //then
             savedPieces shouldHaveSize 1
-            savedPieces.first() shouldBeEqualToComparingFields  piece
+            savedPieces.first() shouldBeEqualToComparingFields piece
+        }
+    }
+
+    @Test
+    fun `Store and read with session`() {
+        runBlocking {
+            //given
+            val bucketId = 1L
+            val key = "super nft"
+            val piece = Piece(
+                data = "Hello world!".toByteArray(),
+                tags = listOf(Tag(key = "Creator", value = "Jack"))
+            )
+
+            //when
+            val session = caStorage.createSession(CreateSessionParams(1000000, timestampTomorrow.toEpochMilli(), bucketId))
+            testSubject.store(bucketId, key, piece)
+            val savedPieces = testSubject.read(bucketId, key, session)
+
+            //then
+            savedPieces shouldHaveSize 1
+            savedPieces.first() shouldBeEqualToComparingFields piece
         }
     }
 }

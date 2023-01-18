@@ -13,7 +13,6 @@ class NaclCipher : Cipher {
     override fun decrypt(encryptedData: EncryptedData, dek: ByteArray): ByteArray {
         if (dek.size != 32) throw Exception("dek size must be 32!")
         val secretBox = SecretBox(dek, encryptedData.nonce.decodeToString().toLong())
-        secretBox.open(encryptedData.data)
         return secretBox.open(encryptedData.data)
     }
 }
