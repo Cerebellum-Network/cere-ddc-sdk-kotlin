@@ -41,4 +41,6 @@ dependencies {
     implementation("com.github.komputing.khex:extensions:${Versions.khex}")
     implementation("com.github.yeeco:schnorrkel-java:${Versions.schnorrkel}")
     implementation("net.openhft:zero-allocation-hashing:${Versions.openhft}")
+    // CID
+    implementation("com.github.ipld:java-cid:${Versions.cid}")
 }
