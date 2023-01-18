@@ -294,7 +294,7 @@ class ContentAddressableStorage(
         val url = buildString {
             append(cdnNodeUrl)
             append(apiUrl)
-            path.takeIf(String::isNotEmpty)?.replace("+", "%2B").also { append("/").append(path) }
+            path.takeIf(String::isNotEmpty)?.also { append("/").append(path) }
         }
         val request = HttpRequestBuilder().apply {
             url(url)

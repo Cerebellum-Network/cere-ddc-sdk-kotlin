@@ -3,14 +3,13 @@ package network.cere.ddc.contract
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import network.cere.ddc.contract.abi.ddcBucketAbiPath
 import network.cere.ddc.contract.blockchain.client.JACKSON
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 
 class BucketContractConfig(private val abiFile: Path? = null) {
 
-    private val defaultAbiFile = "src${File.separator}main${File.separator}resources${File.separator}ddc_bucket.json"
     private val hashes: MutableMap<String, String> = HashMap()
 
     suspend fun init() {
@@ -18,7 +17,7 @@ class BucketContractConfig(private val abiFile: Path? = null) {
             abiFile?.let {
                 JACKSON.readTree(Files.readAllBytes(it))
             }
-                ?: javaClass.getResourceAsStream(defaultAbiFile)?.use { JACKSON.readTree(it) }
+                ?: javaClass.getResourceAsStream(ddcBucketAbiPath)?.use { JACKSON.readTree(it) }
         }
 
         abiFileJson?.get("spec")?.get("messages")?.forEach {
