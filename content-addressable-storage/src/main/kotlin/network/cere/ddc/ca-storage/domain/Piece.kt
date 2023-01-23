@@ -5,12 +5,12 @@ import pb.LinkOuterClass
 import pb.PieceOuterClass
 import pb.TagOuterClass
 
-data class Piece (
-    override var data: ByteArray,
-    override val tags: List<Tag> = listOf(),
+data class Piece(
+    var data: ByteArray,
+    val tags: List<Tag> = listOf(),
     val links: List<Link> = listOf(),
-    override val cid: String? = null
-): Container {
+    val cid: String? = null
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -34,16 +34,20 @@ data class Piece (
     }
 
     fun toProto(bucketId: Long): PieceOuterClass.Piece {
-        val protoTags = tags.map { TagOuterClass.Tag.newBuilder()
-            .setKey(ByteString.copyFrom(it.key.toByteArray()))
-            .setValue(ByteString.copyFrom(it.value.toByteArray()))
-            .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
-            .build() }.asIterable()
-        val protoLinks = links.map { LinkOuterClass.Link.newBuilder()
-            .setCid(it.cid)
-            .setName(it.name)
-            .setSize(it.size)
-            .build() }.asIterable()
+        val protoTags = tags.map {
+            TagOuterClass.Tag.newBuilder()
+                .setKey(ByteString.copyFrom(it.key.toByteArray()))
+                .setValue(ByteString.copyFrom(it.value.toByteArray()))
+                .setSearchable(TagOuterClass.SearchType.valueOf(it.searchType.name))
+                .build()
+        }.asIterable()
+        val protoLinks = links.map {
+            LinkOuterClass.Link.newBuilder()
+                .setCid(it.cid)
+                .setName(it.name)
+                .setSize(it.size)
+                .build()
+        }.asIterable()
         return PieceOuterClass.Piece.newBuilder()
             .setBucketId(bucketId.toInt())
             .setData(ByteString.copyFrom(data))
