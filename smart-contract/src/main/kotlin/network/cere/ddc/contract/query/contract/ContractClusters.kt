@@ -30,14 +30,14 @@ class ContractClusters(private val client: SmartContractClient, private val cont
     override suspend fun clusterCreate(
         value: Balance,
         manager: AccountId,
-        partitionCount: Long,
+        vnodeCount: Long,
         nodeIds: List<Long>,
         clusterParams: String,
         predictGasLimit: Boolean
     ): ClusterCreatedEvent {
         val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_create"), predictGasLimit, value.value) {
             write(AccountIdScale, manager)
-            writeUint32(partitionCount)
+            writeUint32(vnodeCount)
             write(nodeIdsWriter, nodeIds)
             writeString(clusterParams)
         }
@@ -54,13 +54,13 @@ class ContractClusters(private val client: SmartContractClient, private val cont
 
     override suspend fun clusterReplaceNode(
         clusterId: Long,
-        partitionId: Long,
+        vnodeId: Long,
         newNodeId: Long,
         predictGasLimit: Boolean
     ): ClusterNodeReplacedEvent {
         val event = client.callTransaction(contractConfig.getMethodHashByName("cluster_replace_node"), predictGasLimit) {
             writeUint32(clusterId)
-            writeUint32(partitionId)
+            writeUint32(vnodeId)
             writeUint32(newNodeId)
         }
 

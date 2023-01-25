@@ -42,10 +42,11 @@ class ContractBuckets(private val client: SmartContractClient, private val contr
         return response.read(bucketStatusListReader)
     }
 
-    override suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long, predictGasLimit: Boolean): BucketCreatedEvent {
+    override suspend fun bucketCreate(value: Balance, bucketParams: String, clusterId: Long, predictGasLimit: Boolean, ownerId: AccountId?): BucketCreatedEvent {
         val event = client.callTransaction(contractConfig.getMethodHashByName("bucket_create"), predictGasLimit, value.value) {
             writeString(bucketParams)
             writeUint32(clusterId)
+            writeNullable(AccountIdScale, ownerId)
         }
 
         return event.read(BucketCreatedEventReader)

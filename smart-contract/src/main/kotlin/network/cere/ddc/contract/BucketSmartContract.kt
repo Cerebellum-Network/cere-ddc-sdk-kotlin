@@ -13,10 +13,9 @@ class BucketSmartContract(
     contractClusters: ContractClusters = ContractClusters(client, bucketContractConfig),
     contractNodes: ContractNodes = ContractNodes(client, bucketContractConfig),
     contractAdmins: ContractAdmins = ContractAdmins(client, bucketContractConfig),
-    contractPermissions: ContractPermissions = ContractPermissions(client, bucketContractConfig),
     contractBillings: ContractBillings = ContractBillings(client, bucketContractConfig)
 ) : Buckets by contractBuckets, Clusters by contractClusters, Nodes by contractNodes, Admins by contractAdmins,
-    Permissions by contractPermissions, Billings by contractBillings, AutoCloseable by client {
+    Billings by contractBillings, AutoCloseable by client {
 
     companion object {
         suspend fun buildAndConnect(
